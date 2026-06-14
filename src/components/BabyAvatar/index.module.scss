@@ -1,0 +1,41 @@
+@use '@/styles/variables.scss' as *;
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-round;
+  flex-shrink: 0;
+}
+
+.sm {
+  width: 56rpx;
+  height: 56rpx;
+}
+
+.md {
+  width: 80rpx;
+  height: 80rpx;
+}
+
+.lg {
+  width: 120rpx;
+  height: 120rpx;
+}
+
+.text {
+  color: $color-text-white;
+  font-weight: $font-weight-semibold;
+}
+
+.sm .text {
+  font-size: 24rpx;
+}
+
+.md .text {
+  font-size: 32rpx;
+}
+
+.lg .text {
+  font-size: 44rpx;
+}

@@ -1,0 +1,35 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  flex: 1;
+  min-width: 0;
+}
+
+.label {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.valueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+}
+
+.value {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: 1.2;
+}
+
+.unit {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}

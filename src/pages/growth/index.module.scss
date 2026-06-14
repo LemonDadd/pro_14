@@ -1,0 +1,286 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-lg $page-padding 200rpx;
+  background: linear-gradient(180deg, #F0FFF4 0%, $color-bg-page 30%);
+}
+
+.header {
+  margin-bottom: $spacing-xl;
+}
+
+.pageTitle {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.pageSubtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: $button-height-md;
+  background: linear-gradient(135deg, $color-success 0%, #55D8A8 100%);
+  border-radius: $radius-button;
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-xl;
+  box-shadow: 0 4rpx 16rpx rgba(0, 184, 148, 0.3);
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.section {
+  margin-bottom: $spacing-xl;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.chartCard {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.chartTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.chartUnit {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.chartContainer {
+  position: relative;
+  height: 320rpx;
+  padding-left: 60rpx;
+  padding-bottom: 40rpx;
+}
+
+.yAxis {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 40rpx;
+  width: 56rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.yLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  text-align: right;
+  padding-right: $spacing-xs;
+}
+
+.xAxis {
+  position: absolute;
+  left: 60rpx;
+  right: 0;
+  bottom: 0;
+  height: 32rpx;
+  display: flex;
+  justify-content: space-between;
+}
+
+.xLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  transform: translateX(-50%);
+}
+
+.chartArea {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-left: 2rpx solid $color-border;
+  border-bottom: 2rpx solid $color-border;
+}
+
+.gridLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2rpx;
+  background-color: $color-divider;
+}
+
+.linePath {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.dataPoint {
+  position: absolute;
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: $radius-round;
+  background-color: $color-success;
+  border: 4rpx solid $color-bg-card;
+  box-shadow: 0 2rpx 8rpx rgba(0, 184, 148, 0.4);
+  transform: translate(-50%, -50%);
+}
+
+.recordList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.recordCard {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recordLeft {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.recordDate {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.recordNote {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.recordRight {
+  display: flex;
+  gap: $spacing-lg;
+}
+
+.recordMetric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2rpx;
+}
+
+.recordValue {
+  font-size: $font-size-lg;
+  color: $color-success;
+  font-weight: $font-weight-bold;
+}
+
+.recordUnit {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.formModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+}
+
+.formSheet {
+  width: 100%;
+  background-color: $color-bg-card;
+  border-radius: $radius-xl $radius-xl 0 0;
+  padding: $spacing-xl $page-padding;
+  padding-bottom: calc($spacing-xl + env(safe-area-inset-bottom));
+}
+
+.formHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xl;
+}
+
+.formTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.formClose {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+  padding: $spacing-sm;
+}
+
+.formGroup {
+  margin-bottom: $spacing-lg;
+}
+
+.formLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.formInput {
+  width: 100%;
+  height: $button-height-md;
+  background-color: $color-bg-page;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  box-sizing: border-box;
+}
+
+.formSubmit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-success 0%, #55D8A8 100%);
+  border-radius: $radius-button;
+  color: $color-text-white;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  margin-top: $spacing-lg;
+  box-shadow: 0 4rpx 16rpx rgba(0, 184, 148, 0.3);
+}

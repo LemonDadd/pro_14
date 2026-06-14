@@ -1,0 +1,266 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-lg $page-padding 200rpx;
+  background: linear-gradient(180deg, #FFF7ED 0%, $color-bg-page 30%);
+}
+
+.header {
+  margin-bottom: $spacing-xl;
+}
+
+.pageTitle {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.pageSubtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: $button-height-md;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-button;
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-xl;
+  box-shadow: 0 4rpx 16rpx rgba(255, 143, 177, 0.3);
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.babyList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.babyCard {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  display: flex;
+  align-items: center;
+  gap: $spacing-lg;
+  border: 4rpx solid transparent;
+  transition: all $transition-base;
+}
+
+.babyCard.active {
+  border-color: $color-primary;
+  background: linear-gradient(135deg, rgba(255, 143, 177, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+}
+
+.babyInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.babyNameRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-xs;
+}
+
+.babyName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.currentBadge {
+  font-size: $font-size-xs;
+  padding: 2rpx 12rpx;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  border-radius: $radius-round;
+}
+
+.babyDetail {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: 4rpx;
+}
+
+.babyMeta {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.babyActions {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.actionBtn {
+  font-size: $font-size-sm;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-button;
+  text-align: center;
+}
+
+.actionBtn.switch {
+  background-color: rgba(255, 143, 177, 0.1);
+  color: $color-primary;
+}
+
+.actionBtn.delete {
+  background-color: rgba(225, 112, 85, 0.1);
+  color: $color-error;
+}
+
+.formModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+}
+
+.formSheet {
+  width: 100%;
+  background-color: $color-bg-card;
+  border-radius: $radius-xl $radius-xl 0 0;
+  padding: $spacing-xl $page-padding;
+  padding-bottom: calc($spacing-xl + env(safe-area-inset-bottom));
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.formHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xl;
+}
+
+.formTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.formClose {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+  padding: $spacing-sm;
+}
+
+.formGroup {
+  margin-bottom: $spacing-lg;
+}
+
+.formLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.formInput {
+  width: 100%;
+  height: $button-height-md;
+  background-color: $color-bg-page;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  box-sizing: border-box;
+}
+
+.genderOptions {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.genderOption {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: $button-height-md;
+  background-color: $color-bg-page;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  border: 4rpx solid transparent;
+  transition: all $transition-base;
+}
+
+.genderOption.active {
+  background-color: rgba(255, 143, 177, 0.1);
+  border-color: $color-primary;
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.feedOptions {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.feedOption {
+  display: flex;
+  align-items: center;
+  padding: $spacing-md;
+  background-color: $color-bg-page;
+  border-radius: $radius-md;
+  border: 4rpx solid transparent;
+  transition: all $transition-base;
+}
+
+.feedOption.active {
+  background-color: rgba(255, 143, 177, 0.1);
+  border-color: $color-primary;
+}
+
+.feedOptionLabel {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  flex: 1;
+}
+
+.feedOptionDesc {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.feedOption.active .feedOptionLabel {
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.formSubmit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-button;
+  color: $color-text-white;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  margin-top: $spacing-lg;
+  box-shadow: 0 4rpx 16rpx rgba(255, 143, 177, 0.3);
+}

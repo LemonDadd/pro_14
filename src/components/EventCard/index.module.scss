@@ -1,0 +1,59 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  flex: 1;
+  min-width: 0;
+}
+
+.typeBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-round;
+  align-self: flex-start;
+}
+
+.typeLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.detail {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: $spacing-xs;
+  margin-left: $spacing-md;
+  flex-shrink: 0;
+}
+
+.time {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.duration {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}

@@ -1,0 +1,111 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-lg $page-padding 200rpx;
+  background: linear-gradient(180deg, #FFF0F5 0%, $color-bg-page 30%);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-xl;
+}
+
+.babyInfo {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.babyMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.babyName {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.babyAge {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.switchBtn {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  padding: $spacing-xs $spacing-md;
+  background-color: rgba(255, 143, 177, 0.1);
+  border-radius: $radius-button;
+}
+
+.feedReminder {
+  background: linear-gradient(135deg, #FFF0F5 0%, #FFE4EC 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-xl;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4rpx 16rpx rgba(255, 143, 177, 0.1);
+}
+
+.reminderLeft {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.reminderTitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.reminderTime {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.reminderBadge {
+  padding: $spacing-xs $spacing-md;
+  border-radius: $radius-button;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.reminderBadge.warning {
+  background-color: rgba(253, 203, 110, 0.2);
+  color: #E67E22;
+}
+
+.reminderBadge.normal {
+  background-color: rgba(0, 184, 148, 0.15);
+  color: $color-success;
+}
+
+.reminderBadge.none {
+  background-color: rgba(223, 230, 233, 0.5);
+  color: $color-text-tertiary;
+}
+
+.section {
+  margin-bottom: $spacing-xl;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.eventList {
+  display: flex;
+  flex-direction: column;
+}

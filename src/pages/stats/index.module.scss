@@ -1,0 +1,167 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding: $spacing-lg $page-padding 200rpx;
+  background: linear-gradient(180deg, #F0F8FF 0%, $color-bg-page 30%);
+}
+
+.header {
+  margin-bottom: $spacing-xl;
+}
+
+.pageTitle {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.pageSubtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.statsRow {
+  display: flex;
+  gap: $spacing-md;
+  margin-bottom: $spacing-xl;
+}
+
+.section {
+  margin-bottom: $spacing-xl;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.weekChart {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.chartTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.chartUnit {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.chartBody {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 300rpx;
+  gap: $spacing-xs;
+  padding-top: $spacing-lg;
+}
+
+.chartBar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.barFill {
+  width: 100%;
+  background: linear-gradient(180deg, $color-primary-light 0%, $color-primary 100%);
+  border-radius: $radius-sm $radius-sm 4rpx 4rpx;
+  min-height: 8rpx;
+  transition: height $transition-base;
+}
+
+.barLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.barValue {
+  font-size: 20rpx;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+}
+
+.todayDetail {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md 0;
+  border-bottom: 2rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  &:first-child {
+    padding-top: 0;
+  }
+}
+
+.detailLabel {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.detailValue {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.feedTypeList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.feedTypeItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.feedDot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: $radius-round;
+  background-color: $color-feed;
+}
+
+.feedTypeLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  flex: 1;
+}
+
+.feedTypeValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}

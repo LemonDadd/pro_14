@@ -1,0 +1,88 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.timeLabels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.timeLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  width: 60rpx;
+  text-align: center;
+}
+
+.bar {
+  position: relative;
+  height: 48rpx;
+  background-color: $color-bg-page;
+  border-radius: $radius-md;
+  overflow: visible;
+}
+
+.track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2rpx;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.block {
+  position: absolute;
+  top: 6rpx;
+  bottom: 6rpx;
+  border-radius: $radius-sm;
+  min-width: 8rpx;
+}
+
+.nowIndicator {
+  position: absolute;
+  top: -8rpx;
+  bottom: -8rpx;
+  width: 3rpx;
+  background-color: $color-error;
+  border-radius: $radius-round;
+  left: var(--now-position, 50%);
+}
+
+.legend {
+  display: flex;
+  gap: $spacing-lg;
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 2rpx solid $color-divider;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.legendDot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: $radius-round;
+}
+
+.legendText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
