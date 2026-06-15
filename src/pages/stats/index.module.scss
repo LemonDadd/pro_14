@@ -50,7 +50,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: $spacing-lg;
+  margin-bottom: $spacing-md;
 }
 
 .chartTitle {
@@ -62,42 +62,6 @@
 .chartUnit {
   font-size: $font-size-xs;
   color: $color-text-tertiary;
-}
-
-.chartBody {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  height: 300rpx;
-  gap: $spacing-xs;
-  padding-top: $spacing-lg;
-}
-
-.chartBar {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: $spacing-xs;
-}
-
-.barFill {
-  width: 100%;
-  background: linear-gradient(180deg, $color-primary-light 0%, $color-primary 100%);
-  border-radius: $radius-sm $radius-sm 4rpx 4rpx;
-  min-height: 8rpx;
-  transition: height $transition-base;
-}
-
-.barLabel {
-  font-size: $font-size-xs;
-  color: $color-text-tertiary;
-}
-
-.barValue {
-  font-size: 20rpx;
-  color: $color-text-secondary;
-  font-weight: $font-weight-medium;
 }
 
 .todayDetail {

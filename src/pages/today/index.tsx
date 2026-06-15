@@ -4,7 +4,7 @@ import Taro from '@tarojs/taro';
 import { useBabyStore } from '@/store/babyStore';
 import { formatAge, getTimeSinceFeed } from '@/utils/time';
 import BabyAvatar from '@/components/BabyAvatar';
-import TimelineBar from '@/components/TimelineBar';
+import CircularTimeline from '@/components/CircularTimeline';
 import EventCard from '@/components/EventCard';
 import QuickRecordFab from '@/components/QuickRecordFab';
 import EmptyState from '@/components/EmptyState';
@@ -155,9 +155,7 @@ const TodayPage: React.FC = () => {
 
       <View className={styles.section}>
         <Text className={styles.sectionTitle}>24小时时间轴</Text>
-        <View style={{ '--now-position': `${nowPercent}%` } as React.CSSProperties}>
-          <TimelineBar events={todayEvents} />
-        </View>
+        <CircularTimeline events={todayEvents} nowPercent={nowPercent} />
       </View>
 
       <View className={styles.section}>

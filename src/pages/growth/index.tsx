@@ -2,9 +2,13 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, Input } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useBabyStore } from '@/store/babyStore';
-import type { GrowthRecord } from '@/types';
+import { getWHOPercentileData } from '@/utils/whoPercentiles';
+import EcCanvas from '@/components/EcCanvas';
 import EmptyState from '@/components/EmptyState';
 import styles from './index.module.scss';
+import classnames from 'classnames';
+
+type ChartTab = 'weight' | 'height';
 
 const GrowthPage: React.FC = () => {
   const {
@@ -15,6 +19,7 @@ const GrowthPage: React.FC = () => {
     deleteGrowthRecord
   } = useBabyStore();
 
+  const [activeTab, setActiveTab] = useState<ChartTab>('weight');
   const [showForm, setShowForm] = useState(false);
   const [formDate, setFormDate] = useState(
     new Date().toISOString().split('T')[0]
@@ -29,30 +34,235 @@ const GrowthPage: React.FC = () => {
 
   const records = currentBaby ? getBabyGrowthRecords() : [];
 
-  const chartData = useMemo(() => {
-    if (records.length === 0) return null;
+  const getAgeMonths = (dateStr: string): number => {
+    if (!currentBaby) return 0;
+    const birth = new Date(currentBaby.birthday);
+    const d = new Date(dateStr);
+    return (d.getFullYear() - birth.getFullYear()) * 12 + (d.getMonth() - birth.getMonth()) + (d.getDate() - birth.getDate()) / 30;
+  };
 
-    const weights = records.map((r) => r.weight);
-    const heights = records.filter((r) => r.height).map((r) => r.height as number);
+  const weightChartOption = useMemo(() => {
+    if (!currentBaby) return {};
 
-    const minWeight = Math.min(...weights, currentBaby?.birthWeight || 2.5) - 0.5;
-    const maxWeight = Math.max(...weights, currentBaby?.birthWeight || 3.5) + 0.5;
-    const weightRange = maxWeight - minWeight || 1;
+    const whoData = getWHOPercentileData(currentBaby.gender, 'weight');
+    const userPoints = records.map((r) => ({
+      age: Math.max(0, getAgeMonths(r.date)),
+      weight: r.weight,
+      date: r.date
+    }));
 
-    const yTicks = 5;
-    const yValues: number[] = [];
-    for (let i = 0; i <= yTicks; i++) {
-      yValues.push(Number((minWeight + (weightRange * i) / yTicks).toFixed(1)));
-    }
+    const yMin = Math.min(
+      whoData[0]?.p3 || 2,
+      ...userPoints.map((p) => p.weight)
+    ) - 0.5;
+    const yMax = Math.max(
+      whoData[whoData.length - 1]?.p97 || 12,
+      ...userPoints.map((p) => p.weight)
+    ) + 0.5;
 
-    const points = records.map((r, i) => {
-      const xPercent = records.length === 1 ? 50 : (i / (records.length - 1)) * 100;
-      const yPercent = ((maxWeight - r.weight) / weightRange) * 100;
-      return { x: xPercent, y: yPercent, value: r.weight };
-    });
-
-    return { yValues, points, minWeight, maxWeight };
+    return {
+      grid: { top: 30, right: 20, bottom: 30, left: 45, containLabel: false },
+      tooltip: {
+        trigger: 'item' as const,
+        backgroundColor: 'rgba(255,255,255,0.95)',
+        borderColor: '#FFE0EA',
+        borderWidth: 1,
+        textStyle: { color: '#2D3436', fontSize: 12 },
+        formatter: (params: any) => {
+          if (params.seriesName === '宝宝体重') {
+            return `${params.data[2]}<br/>月龄: ${params.data[0].toFixed(1)}<br/>体重: <b>${params.data[1]}kg</b>`;
+          }
+          return `${params.seriesName}<br/>月龄: ${params.data[0]}<br/>体重: ${params.data[1]}kg`;
+        }
+      },
+      legend: {
+        data: ['P3', 'P50', 'P97', '宝宝体重'],
+        bottom: 0,
+        textStyle: { fontSize: 10, color: '#B2BEC3' },
+        itemWidth: 16,
+        itemHeight: 8
+      },
+      xAxis: {
+        type: 'value' as const,
+        min: 0,
+        max: 12,
+        name: '月龄',
+        nameTextStyle: { color: '#B2BEC3', fontSize: 10 },
+        axisLine: { lineStyle: { color: '#FFE0EA' } },
+        axisTick: { show: false },
+        axisLabel: { color: '#B2BEC3', fontSize: 10 },
+        splitLine: { show: false }
+      },
+      yAxis: {
+        type: 'value' as const,
+        min: Math.floor(yMin),
+        max: Math.ceil(yMax),
+        name: 'kg',
+        nameTextStyle: { color: '#B2BEC3', fontSize: 10 },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: '#FFF0F4', type: 'dashed' as const } },
+        axisLabel: { color: '#B2BEC3', fontSize: 10 }
+      },
+      series: [
+        {
+          name: 'P3',
+          type: 'line',
+          data: whoData.map((d) => [d.ageMonths, d.p3]),
+          smooth: true,
+          lineStyle: { width: 1, color: '#DFE6E9', type: 'dashed' as const },
+          itemStyle: { color: '#DFE6E9' },
+          symbol: 'none',
+          silent: true
+        },
+        {
+          name: 'P50',
+          type: 'line',
+          data: whoData.map((d) => [d.ageMonths, d.p50]),
+          smooth: true,
+          lineStyle: { width: 1.5, color: '#B2BEC3', type: 'dashed' as const },
+          itemStyle: { color: '#B2BEC3' },
+          symbol: 'none',
+          silent: true
+        },
+        {
+          name: 'P97',
+          type: 'line',
+          data: whoData.map((d) => [d.ageMonths, d.p97]),
+          smooth: true,
+          lineStyle: { width: 1, color: '#DFE6E9', type: 'dashed' as const },
+          itemStyle: { color: '#DFE6E9' },
+          symbol: 'none',
+          silent: true
+        },
+        {
+          name: '宝宝体重',
+          type: 'line',
+          data: userPoints.map((p) => [p.age, p.weight, p.date]),
+          smooth: true,
+          lineStyle: { width: 2.5, color: '#00B894' },
+          itemStyle: { color: '#00B894', borderWidth: 2, borderColor: '#fff' },
+          symbol: 'circle',
+          symbolSize: 8,
+          z: 10
+        }
+      ]
+    };
   }, [records, currentBaby]);
+
+  const heightRecords = useMemo(
+    () => records.filter((r) => r.height != null),
+    [records]
+  );
+
+  const heightChartOption = useMemo(() => {
+    if (!currentBaby || heightRecords.length === 0) return {};
+
+    const whoData = getWHOPercentileData(currentBaby.gender, 'height');
+    const userPoints = heightRecords.map((r) => ({
+      age: Math.max(0, getAgeMonths(r.date)),
+      height: r.height as number,
+      date: r.date
+    }));
+
+    const yMin = Math.min(
+      whoData[0]?.p3 || 45,
+      ...userPoints.map((p) => p.height)
+    ) - 2;
+    const yMax = Math.max(
+      whoData[whoData.length - 1]?.p97 || 76,
+      ...userPoints.map((p) => p.height)
+    ) + 2;
+
+    return {
+      grid: { top: 30, right: 20, bottom: 30, left: 45, containLabel: false },
+      tooltip: {
+        trigger: 'item' as const,
+        backgroundColor: 'rgba(255,255,255,0.95)',
+        borderColor: '#FFE0EA',
+        borderWidth: 1,
+        textStyle: { color: '#2D3436', fontSize: 12 },
+        formatter: (params: any) => {
+          if (params.seriesName === '宝宝身长') {
+            return `${params.data[2]}<br/>月龄: ${params.data[0].toFixed(1)}<br/>身长: <b>${params.data[1]}cm</b>`;
+          }
+          return `${params.seriesName}<br/>月龄: ${params.data[0]}<br/>身长: ${params.data[1]}cm`;
+        }
+      },
+      legend: {
+        data: ['P3', 'P50', 'P97', '宝宝身长'],
+        bottom: 0,
+        textStyle: { fontSize: 10, color: '#B2BEC3' },
+        itemWidth: 16,
+        itemHeight: 8
+      },
+      xAxis: {
+        type: 'value' as const,
+        min: 0,
+        max: 12,
+        name: '月龄',
+        nameTextStyle: { color: '#B2BEC3', fontSize: 10 },
+        axisLine: { lineStyle: { color: '#FFE0EA' } },
+        axisTick: { show: false },
+        axisLabel: { color: '#B2BEC3', fontSize: 10 },
+        splitLine: { show: false }
+      },
+      yAxis: {
+        type: 'value' as const,
+        min: Math.floor(yMin),
+        max: Math.ceil(yMax),
+        name: 'cm',
+        nameTextStyle: { color: '#B2BEC3', fontSize: 10 },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: '#FFF0F4', type: 'dashed' as const } },
+        axisLabel: { color: '#B2BEC3', fontSize: 10 }
+      },
+      series: [
+        {
+          name: 'P3',
+          type: 'line',
+          data: whoData.map((d) => [d.ageMonths, d.p3]),
+          smooth: true,
+          lineStyle: { width: 1, color: '#DFE6E9', type: 'dashed' as const },
+          itemStyle: { color: '#DFE6E9' },
+          symbol: 'none',
+          silent: true
+        },
+        {
+          name: 'P50',
+          type: 'line',
+          data: whoData.map((d) => [d.ageMonths, d.p50]),
+          smooth: true,
+          lineStyle: { width: 1.5, color: '#B2BEC3', type: 'dashed' as const },
+          itemStyle: { color: '#B2BEC3' },
+          symbol: 'none',
+          silent: true
+        },
+        {
+          name: 'P97',
+          type: 'line',
+          data: whoData.map((d) => [d.ageMonths, d.p97]),
+          smooth: true,
+          lineStyle: { width: 1, color: '#DFE6E9', type: 'dashed' as const },
+          itemStyle: { color: '#DFE6E9' },
+          symbol: 'none',
+          silent: true
+        },
+        {
+          name: '宝宝身长',
+          type: 'line',
+          data: userPoints.map((p) => [p.age, p.height, p.date]),
+          smooth: true,
+          lineStyle: { width: 2.5, color: '#7BC8FF' },
+          itemStyle: { color: '#7BC8FF', borderWidth: 2, borderColor: '#fff' },
+          symbol: 'circle',
+          symbolSize: 8,
+          z: 10
+        }
+      ]
+    };
+  }, [heightRecords, currentBaby]);
 
   const handleAddRecord = () => {
     if (!formWeight) {
@@ -116,58 +326,51 @@ const GrowthPage: React.FC = () => {
       </View>
 
       <View className={styles.section}>
-        <Text className={styles.sectionTitle}>体重曲线</Text>
+        <View className={styles.tabRow}>
+          <View
+            className={classnames(styles.tab, { [styles.active]: activeTab === 'weight' })}
+            onClick={() => setActiveTab('weight')}
+          >
+            <Text>体重</Text>
+          </View>
+          <View
+            className={classnames(styles.tab, { [styles.active]: activeTab === 'height' })}
+            onClick={() => setActiveTab('height')}
+          >
+            <Text>身长</Text>
+          </View>
+        </View>
+
         <View className={styles.chartCard}>
-          {records.length === 0 ? (
+          {activeTab === 'weight' ? (
+            records.length === 0 ? (
+              <EmptyState
+                title="暂无体重数据"
+                description="添加一条体重记录开始追踪吧"
+              />
+            ) : (
+              <>
+                <View className={styles.chartHeader}>
+                  <Text className={styles.chartTitle}>体重曲线</Text>
+                  <Text className={styles.whoTag}>WHO 参考</Text>
+                </View>
+                <EcCanvas option={weightChartOption} height={250} />
+              </>
+            )
+          ) : heightRecords.length === 0 ? (
             <EmptyState
-              title="暂无生长数据"
-              description="添加一条体重记录开始追踪吧"
+              title="暂无身长数据"
+              description="添加带身长的记录开始追踪吧"
             />
-          ) : chartData ? (
+          ) : (
             <>
               <View className={styles.chartHeader}>
-                <Text className={styles.chartTitle}>体重变化</Text>
-                <Text className={styles.chartUnit}>单位：kg</Text>
+                <Text className={styles.chartTitle}>身长曲线</Text>
+                <Text className={styles.whoTag}>WHO 参考</Text>
               </View>
-              <View className={styles.chartContainer}>
-                <View className={styles.yAxis}>
-                  {chartData.yValues.slice().reverse().map((v) => (
-                    <Text key={v} className={styles.yLabel}>{v}</Text>
-                  ))}
-                </View>
-                <View className={styles.chartArea}>
-                  {chartData.yValues.slice(1, -1).map((_, i) => (
-                    <View
-                      key={i}
-                      className={styles.gridLine}
-                      style={{ top: `${((i + 1) / (chartData.yValues.length - 1)) * 100}%` }}
-                    />
-                  ))}
-                  {chartData.points.map((p, i) => (
-                    <View
-                      key={i}
-                      className={styles.dataPoint}
-                      style={{ left: `${p.x}%`, top: `${p.y}%` }}
-                    />
-                  ))}
-                </View>
-                <View className={styles.xAxis}>
-                  {records.map((r, i) => (
-                    <Text
-                      key={r.id}
-                      className={styles.xLabel}
-                      style={{
-                        position: 'absolute',
-                        left: `${records.length === 1 ? 50 : (i / (records.length - 1)) * 100}%`
-                      }}
-                    >
-                      {r.date.slice(5)}
-                    </Text>
-                  ))}
-                </View>
-              </View>
+              <EcCanvas option={heightChartOption} height={250} />
             </>
-          ) : null}
+          )}
         </View>
       </View>
 

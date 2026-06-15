@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo } from 'react';
 import { View, Text } from '@tarojs/components';
 import { useBabyStore } from '@/store/babyStore';
-import { isToday, formatDate } from '@/utils/time';
+import { formatDate } from '@/utils/time';
 import StatCard from '@/components/StatCard';
+import EcCanvas from '@/components/EcCanvas';
 import EmptyState from '@/components/EmptyState';
 import styles from './index.module.scss';
 
@@ -94,7 +95,80 @@ const StatsPage: React.FC = () => {
     return days.reverse();
   }, [weekEvents]);
 
-  const maxMl = Math.max(...weekStats.map((d) => d.totalMl), 1);
+  const chartOption = useMemo(() => {
+    if (weekStats.length === 0) return {};
+
+    return {
+      grid: {
+        top: 30,
+        right: 20,
+        bottom: 30,
+        left: 45,
+        containLabel: false
+      },
+      tooltip: {
+        trigger: 'axis' as const,
+        backgroundColor: 'rgba(255,255,255,0.95)',
+        borderColor: '#FFE0EA',
+        borderWidth: 1,
+        textStyle: { color: '#2D3436', fontSize: 12 },
+        formatter: (params: any) => {
+          const p = params[0];
+          return `${p.name}<br/>奶量: <b>${p.value}ml</b>`;
+        }
+      },
+      xAxis: {
+        type: 'category' as const,
+        data: weekStats.map((d) => d.label),
+        axisLine: { lineStyle: { color: '#FFE0EA' } },
+        axisTick: { show: false },
+        axisLabel: { color: '#B2BEC3', fontSize: 10 }
+      },
+      yAxis: {
+        type: 'value' as const,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: '#FFF0F4', type: 'dashed' as const } },
+        axisLabel: { color: '#B2BEC3', fontSize: 10 }
+      },
+      series: [
+        {
+          type: 'line',
+          data: weekStats.map((d) => d.totalMl),
+          smooth: true,
+          symbol: 'circle',
+          symbolSize: 8,
+          lineStyle: {
+            width: 3,
+            color: {
+              type: 'linear' as const,
+              x: 0, y: 0, x2: 1, y2: 0,
+              colorStops: [
+                { offset: 0, color: '#FF8FB1' },
+                { offset: 1, color: '#FFB3CC' }
+              ]
+            }
+          },
+          itemStyle: {
+            color: '#FF8FB1',
+            borderWidth: 2,
+            borderColor: '#fff'
+          },
+          areaStyle: {
+            color: {
+              type: 'linear' as const,
+              x: 0, y: 0, x2: 0, y2: 1,
+              colorStops: [
+                { offset: 0, color: 'rgba(255,143,177,0.25)' },
+                { offset: 1, color: 'rgba(255,143,177,0.02)' }
+              ]
+            }
+          }
+        }
+      ]
+    };
+  }, [weekStats]);
+
   const sleepHours = (todayStats.sleepSec / 3600).toFixed(1);
 
   if (!currentBaby) {
@@ -132,18 +206,7 @@ const StatsPage: React.FC = () => {
             <Text className={styles.chartTitle}>每日总奶量</Text>
             <Text className={styles.chartUnit}>单位：ml</Text>
           </View>
-          <View className={styles.chartBody}>
-            {weekStats.map((day) => (
-              <View key={day.date} className={styles.chartBar}>
-                <Text className={styles.barValue}>{day.totalMl || '-'}</Text>
-                <View
-                  className={styles.barFill}
-                  style={{ height: `${Math.max((day.totalMl / maxMl) * 100, 2)}%` }}
-                />
-                <Text className={styles.barLabel}>{day.label}</Text>
-              </View>
-            ))}
-          </View>
+          <EcCanvas option={chartOption} height={220} />
         </View>
       </View>
 

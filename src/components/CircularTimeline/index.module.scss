@@ -1,0 +1,125 @@
+@use '@/styles/variables.scss' as *;
+
+$wrapper-size: 560rpx;
+$ring-size: 420rpx;
+$ring-offset: ($wrapper-size - $ring-size) / 2;
+$inner-size: 320rpx;
+$inner-offset: ($wrapper-size - $inner-size) / 2;
+$ring-outer-radius: $ring-size / 2;
+$pointer-height: 210rpx;
+
+.container {
+  background-color: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.ringWrapper {
+  position: relative;
+  width: $wrapper-size;
+  height: $wrapper-size;
+  margin: 0 auto;
+}
+
+.ring {
+  position: absolute;
+  top: $ring-offset;
+  left: $ring-offset;
+  width: $ring-size;
+  height: $ring-size;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.innerCircle {
+  position: absolute;
+  top: $inner-offset;
+  left: $inner-offset;
+  width: $inner-size;
+  height: $inner-size;
+  border-radius: 50%;
+  background: $color-bg-card;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.currentTime {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.pointer {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  width: 6rpx;
+  height: $pointer-height;
+  margin-left: -3rpx;
+  transform-origin: bottom center;
+  background: $color-error;
+  border-radius: 3rpx;
+  z-index: 3;
+}
+
+.centerDot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14rpx;
+  height: 14rpx;
+  margin: -7rpx 0 0 -7rpx;
+  border-radius: 50%;
+  background: $color-error;
+  z-index: 4;
+}
+
+.tickMark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4rpx;
+  height: 14rpx;
+  margin-left: -2rpx;
+  margin-top: -$ring-outer-radius;
+  background: rgba(0, 0, 0, 0.15);
+  transform-origin: 2rpx $ring-outer-radius;
+  z-index: 2;
+}
+
+.hourLabel {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  z-index: 5;
+}
+
+.legend {
+  display: flex;
+  gap: $spacing-lg;
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 2rpx solid $color-divider;
+  justify-content: center;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.legendDot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: $radius-round;
+}
+
+.legendText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
