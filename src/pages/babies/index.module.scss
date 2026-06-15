@@ -120,6 +120,11 @@
   color: $color-primary;
 }
 
+.actionBtn.edit {
+  background-color: rgba(123, 200, 255, 0.15);
+  color: $color-sleep;
+}
+
 .actionBtn.delete {
   background-color: rgba(225, 112, 85, 0.1);
   color: $color-error;

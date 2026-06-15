@@ -60,11 +60,21 @@ const EventCard: React.FC<EventCardProps> = ({ event, onDelete, className }) => 
   const config = typeConfig[event.type];
   const detail = getEventDetail(event);
 
+  const handleClick = () => {
+    Taro.navigateTo({
+      url: `/pages/log-new/index?eventId=${event.id}`
+    });
+  };
+
   const handleLongPress = () => {
     Taro.showActionSheet({
-      itemList: ['删除记录'],
+      itemList: ['编辑记录', '删除记录'],
       success: (res) => {
-        if (res.tapIndex === 0 && onDelete) {
+        if (res.tapIndex === 0) {
+          Taro.navigateTo({
+            url: `/pages/log-new/index?eventId=${event.id}`
+          });
+        } else if (res.tapIndex === 1 && onDelete) {
           onDelete(event.id);
         }
       }
@@ -74,6 +84,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onDelete, className }) => 
   return (
     <View
       className={classnames(styles.card, className)}
+      onClick={handleClick}
       onLongPress={handleLongPress}
     >
       <View className={styles.left}>

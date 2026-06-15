@@ -69,6 +69,7 @@ interface BabyStore {
   deleteGrowthRecord: (id: string) => void;
 
   updateSettings: (data: Partial<AppSettings>) => void;
+  clearAllData: () => void;
 
   getTodayEvents: () => BabyEvent[];
   getWeekEvents: () => BabyEvent[];
@@ -221,6 +222,25 @@ export const useBabyStore = create<BabyStore>((set, get) => ({
     const settings = { ...get().settings, ...data };
     saveSettings(settings);
     set({ settings });
+  },
+
+  clearAllData: () => {
+    saveBabies([]);
+    saveEvents([]);
+    saveGrowthRecords([]);
+    const defaultSettings: AppSettings = {
+      feedReminderInterval: 3,
+      currentBabyId: null
+    };
+    saveSettings(defaultSettings);
+    set({
+      babies: [],
+      events: [],
+      growthRecords: [],
+      settings: defaultSettings,
+      currentBaby: null
+    });
+    console.log('[BabyStore] All data cleared');
   },
 
   getTodayEvents: () => {

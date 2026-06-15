@@ -89,8 +89,8 @@ const TodayPage: React.FC = () => {
 
     const { hours, minutes } = getTimeSinceFeed(lastFeed.timestamp);
     const totalHours = hours + minutes / 60;
-    const isWarning = totalHours > settings.feedReminderInterval;
-    const isUrgent = totalHours > settings.feedReminderInterval + 1;
+    const isOverdue = totalHours >= settings.feedReminderInterval;
+    const isTooFrequent = totalHours < 2;
 
     return (
       <View className={styles.feedReminder}>
@@ -100,13 +100,22 @@ const TodayPage: React.FC = () => {
             {hours > 0 ? `${hours}小时` : ''}{minutes}分钟
           </Text>
         </View>
-        <View
-          className={classnames(
-            styles.reminderBadge,
-            isUrgent || isWarning ? styles.warning : styles.normal
+        <View className={styles.reminderBadges}>
+          {isTooFrequent && (
+            <View className={classnames(styles.reminderBadge, styles.warning)}>
+              间隔短
+            </View>
           )}
-        >
-          {isUrgent ? '超时提醒' : isWarning ? '即将提醒' : '正常'}
+          {isOverdue && (
+            <View className={classnames(styles.reminderBadge, styles.overdue)}>
+              该喂奶了
+            </View>
+          )}
+          {!isTooFrequent && !isOverdue && (
+            <View className={classnames(styles.reminderBadge, styles.normal)}>
+              正常
+            </View>
+          )}
         </View>
       </View>
     );

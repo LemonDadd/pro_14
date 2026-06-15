@@ -72,6 +72,13 @@
   color: $color-primary;
 }
 
+.reminderBadges {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  align-items: flex-end;
+}
+
 .reminderBadge {
   padding: $spacing-xs $spacing-md;
   border-radius: $radius-button;
@@ -80,8 +87,13 @@
 }
 
 .reminderBadge.warning {
-  background-color: rgba(253, 203, 110, 0.2);
+  background-color: rgba(253, 203, 110, 0.25);
   color: #E67E22;
+}
+
+.reminderBadge.overdue {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
 }
 
 .reminderBadge.normal {

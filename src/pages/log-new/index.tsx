@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Input } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useRouter } from '@tarojs/taro';
 import { useBabyStore } from '@/store/babyStore';
-import type { EventType, FeedSide, DiaperType } from '@/types';
+import type { EventType, FeedSide, DiaperType, BabyEvent } from '@/types';
 import { formatDuration } from '@/utils/time';
 import EmptyState from '@/components/EmptyState';
 import styles from './index.module.scss';
@@ -16,8 +16,11 @@ const typeConfig: Record<EventType, { label: string; icon: string }> = {
 };
 
 const LogNewPage: React.FC = () => {
-  const { currentBaby, initStore, addEvent } = useBabyStore();
+  const router = useRouter();
+  const { currentBaby, initStore, addEvent, updateEvent, events } = useBabyStore();
 
+  const [isEdit, setIsEdit] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<BabyEvent | null>(null);
   const [eventType, setEventType] = useState<EventType>('feed');
 
   const [feedMl, setFeedMl] = useState('');
@@ -38,6 +41,34 @@ const LogNewPage: React.FC = () => {
   useEffect(() => {
     initStore();
   }, [initStore]);
+
+  useEffect(() => {
+    const eventId = router.params.eventId;
+    if (eventId && events.length > 0) {
+      const event = events.find((e) => e.id === eventId);
+      if (event) {
+        setIsEdit(true);
+        setEditingEvent(event);
+        setEventType(event.type);
+        setNote(event.note || '');
+
+        if (event.type === 'feed' && event.feedData) {
+          setFeedMl(event.feedData.amountMl ? String(event.feedData.amountMl) : '');
+          setFeedSide(event.feedData.side || '');
+          setTimerSeconds(event.feedData.durationSec || 0);
+        } else if (event.type === 'diaper' && event.diaperData) {
+          setDiaperType(event.diaperData.type);
+          setDiaperNote(event.diaperData.colorNote || '');
+        } else if (event.type === 'sleep' && event.sleepData) {
+          setTimerSeconds(event.sleepData.durationSec || 0);
+        } else if (event.type === 'other' && event.otherData) {
+          setTemperature(event.otherData.temperature ? String(event.otherData.temperature) : '');
+          setMedication(event.otherData.medication || '');
+          setOtherNote(event.otherData.note || '');
+        }
+      }
+    }
+  }, [router.params.eventId, events]);
 
   useEffect(() => {
     if (isTimerRunning) {
@@ -80,7 +111,7 @@ const LogNewPage: React.FC = () => {
 
     let eventData: Record<string, any> = {
       type: eventType,
-      timestamp: Date.now()
+      timestamp: isEdit && editingEvent ? editingEvent.timestamp : Date.now()
     };
 
     if (eventType === 'feed') {
@@ -137,14 +168,19 @@ const LogNewPage: React.FC = () => {
     }
 
     try {
-      addEvent(eventData);
-      Taro.showToast({ title: '记录成功', icon: 'success' });
+      if (isEdit && editingEvent) {
+        updateEvent(editingEvent.id, eventData);
+        Taro.showToast({ title: '修改成功', icon: 'success' });
+      } else {
+        addEvent(eventData);
+        Taro.showToast({ title: '记录成功', icon: 'success' });
+      }
       setTimeout(() => {
         Taro.navigateBack();
       }, 500);
     } catch (e) {
-      console.error('[LogNew] Failed to add event:', e);
-      Taro.showToast({ title: '记录失败', icon: 'error' });
+      console.error('[LogNew] Failed to save event:', e);
+      Taro.showToast({ title: '保存失败', icon: 'error' });
     }
   };
 
@@ -166,11 +202,14 @@ const LogNewPage: React.FC = () => {
           <View
             key={type}
             className={classnames(styles.typeCard, {
-              [styles.active]: eventType === type
+              [styles.active]: eventType === type,
+              [styles.disabled]: isEdit
             })}
             onClick={() => {
-              setEventType(type);
-              handleResetTimer();
+              if (!isEdit) {
+                setEventType(type);
+                handleResetTimer();
+              }
             }}
           >
             <Text className={styles.typeIcon}>{typeConfig[type].icon}</Text>
@@ -334,7 +373,7 @@ const LogNewPage: React.FC = () => {
       </View>
 
       <View className={styles.submitBtn} onClick={handleSubmit}>
-        <Text>保存记录</Text>
+        <Text>{isEdit ? '保存修改' : '保存记录'}</Text>
       </View>
     </View>
   );

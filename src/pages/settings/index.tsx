@@ -6,7 +6,7 @@ import styles from './index.module.scss';
 import classnames from 'classnames';
 
 const SettingsPage: React.FC = () => {
-  const { settings, initStore, updateSettings, babies, events, growthRecords } = useBabyStore();
+  const { settings, initStore, updateSettings, babies, events, growthRecords, clearAllData } = useBabyStore();
 
   useEffect(() => {
     initStore();
@@ -51,11 +51,8 @@ const SettingsPage: React.FC = () => {
       confirmColor: '#E17055',
       success: (res) => {
         if (res.confirm) {
-          Taro.clearStorageSync();
+          clearAllData();
           Taro.showToast({ title: '已清空', icon: 'success' });
-          setTimeout(() => {
-            Taro.reLaunch({ url: '/pages/today/index' });
-          }, 1000);
         }
       }
     });

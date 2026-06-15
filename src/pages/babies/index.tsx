@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Input } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useBabyStore } from '@/store/babyStore';
-import type { BabyGender, FeedPreference } from '@/types';
+import type { BabyGender, FeedPreference, Baby } from '@/types';
 import { formatAge } from '@/utils/time';
 import BabyAvatar from '@/components/BabyAvatar';
 import EmptyState from '@/components/EmptyState';
@@ -10,9 +10,10 @@ import styles from './index.module.scss';
 import classnames from 'classnames';
 
 const BabiesPage: React.FC = () => {
-  const { babies, currentBaby, initStore, addBaby, deleteBaby, setCurrentBaby } = useBabyStore();
+  const { babies, currentBaby, initStore, addBaby, updateBaby, deleteBaby, setCurrentBaby } = useBabyStore();
 
   const [showForm, setShowForm] = useState(false);
+  const [editingBaby, setEditingBaby] = useState<Baby | null>(null);
   const [formName, setFormName] = useState('');
   const [formBirthday, setFormBirthday] = useState('');
   const [formGender, setFormGender] = useState<BabyGender>('girl');
@@ -24,7 +25,33 @@ const BabiesPage: React.FC = () => {
     initStore();
   }, [initStore]);
 
-  const handleAddBaby = () => {
+  const resetForm = () => {
+    setFormName('');
+    setFormBirthday('');
+    setFormGender('girl');
+    setFormBirthWeight('');
+    setFormBirthHeight('');
+    setFormFeedPref('mixed');
+    setEditingBaby(null);
+  };
+
+  const handleOpenAdd = () => {
+    resetForm();
+    setShowForm(true);
+  };
+
+  const handleOpenEdit = (baby: Baby) => {
+    setEditingBaby(baby);
+    setFormName(baby.nickname);
+    setFormBirthday(baby.birthday);
+    setFormGender(baby.gender);
+    setFormBirthWeight(String(baby.birthWeight));
+    setFormBirthHeight(String(baby.birthHeight));
+    setFormFeedPref(baby.feedPreference);
+    setShowForm(true);
+  };
+
+  const handleSaveBaby = () => {
     if (!formName.trim()) {
       Taro.showToast({ title: '请输入昵称', icon: 'none' });
       return;
@@ -36,23 +63,25 @@ const BabiesPage: React.FC = () => {
     const weight = formBirthWeight ? parseFloat(formBirthWeight) : 3.0;
     const height = formBirthHeight ? parseFloat(formBirthHeight) : 50;
 
-    addBaby({
+    const babyData = {
       nickname: formName.trim(),
       birthday: formBirthday,
       gender: formGender,
       birthWeight: weight,
       birthHeight: height,
       feedPreference: formFeedPref
-    });
+    };
 
-    Taro.showToast({ title: '已添加', icon: 'success' });
+    if (editingBaby) {
+      updateBaby(editingBaby.id, babyData);
+      Taro.showToast({ title: '已保存', icon: 'success' });
+    } else {
+      addBaby(babyData);
+      Taro.showToast({ title: '已添加', icon: 'success' });
+    }
+
     setShowForm(false);
-    setFormName('');
-    setFormBirthday('');
-    setFormGender('girl');
-    setFormBirthWeight('');
-    setFormBirthHeight('');
-    setFormFeedPref('mixed');
+    resetForm();
   };
 
   const handleDeleteBaby = (id: string, name: string) => {
@@ -92,7 +121,7 @@ const BabiesPage: React.FC = () => {
         <Text className={styles.pageSubtitle}>管理宝宝档案，支持多宝宝切换</Text>
       </View>
 
-      <View className={styles.addBtn} onClick={() => setShowForm(true)}>
+      <View className={styles.addBtn} onClick={handleOpenAdd}>
         <Text>+ 添加宝宝</Text>
       </View>
 
@@ -139,6 +168,12 @@ const BabiesPage: React.FC = () => {
                   </View>
                 )}
                 <View
+                  className={classnames(styles.actionBtn, styles.edit)}
+                  onClick={() => handleOpenEdit(baby)}
+                >
+                  <Text>编辑</Text>
+                </View>
+                <View
                   className={classnames(styles.actionBtn, styles.delete)}
                   onClick={() => handleDeleteBaby(baby.id, baby.nickname)}
                 >
@@ -154,8 +189,8 @@ const BabiesPage: React.FC = () => {
         <View className={styles.formModal} onClick={() => setShowForm(false)}>
           <View className={styles.formSheet} onClick={(e) => e.stopPropagation()}>
             <View className={styles.formHeader}>
-              <Text className={styles.formTitle}>添加宝宝</Text>
-              <Text className={styles.formClose} onClick={() => setShowForm(false)}>✕</Text>
+              <Text className={styles.formTitle}>{editingBaby ? '编辑宝宝' : '添加宝宝'}</Text>
+              <Text className={styles.formClose} onClick={() => { setShowForm(false); resetForm(); }}>✕</Text>
             </View>
 
             <View className={styles.formGroup}>
@@ -242,8 +277,8 @@ const BabiesPage: React.FC = () => {
               </View>
             </View>
 
-            <View className={styles.formSubmit} onClick={handleAddBaby}>
-              <Text>保存宝宝档案</Text>
+            <View className={styles.formSubmit} onClick={handleSaveBaby}>
+              <Text>{editingBaby ? '保存修改' : '保存宝宝档案'}</Text>
             </View>
           </View>
         </View>
