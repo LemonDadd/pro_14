@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import * as echarts from 'echarts/core';
 import { LineChart, ScatterChart, BarChart } from 'echarts/charts';
 import {
@@ -32,39 +32,71 @@ interface EcCanvasProps {
 }
 
 const EcCanvas: React.FC<EcCanvasProps> = ({ option, height = 300 }) => {
-  const idRef = useRef<string>(`ec-canvas-${++instanceCounter}`);
+  const domRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
+  const optionRef = useRef(option);
+  const idRef = useRef<string>(`ec-canvas-${++instanceCounter}`);
+
+  optionRef.current = option;
+
+  const initChart = useCallback(() => {
+    if (chartRef.current) return;
+    if (!domRef.current) return;
+
+    try {
+      const chart = echarts.init(domRef.current);
+      chartRef.current = chart;
+      chart.setOption(optionRef.current);
+    } catch (e) {
+      console.error('[EcCanvas] init failed:', e);
+    }
+  }, []);
+
+  const refCallback = useCallback((node: HTMLDivElement | null) => {
+    domRef.current = node;
+    if (node) {
+      setTimeout(() => {
+        initChart();
+      }, 50);
+    }
+  }, [initChart]);
 
   useEffect(() => {
-    const dom = document.getElementById(idRef.current);
-    if (!dom) return;
+    if (chartRef.current && option && Object.keys(option).length > 0) {
+      try {
+        chartRef.current.setOption(option, { notMerge: true });
+      } catch (e) {
+        console.error('[EcCanvas] setOption failed:', e);
+      }
+    }
+  }, [option]);
 
-    const chart = echarts.init(dom);
-    chartRef.current = chart;
-    chart.setOption(option);
-
+  useEffect(() => {
     const handleResize = () => {
-      chart.resize();
+      if (chartRef.current) {
+        try {
+          chartRef.current.resize();
+        } catch (_) {}
+      }
     };
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      chart.dispose();
-      chartRef.current = null;
+      if (chartRef.current) {
+        try {
+          chartRef.current.dispose();
+        } catch (_) {}
+        chartRef.current = null;
+      }
     };
   }, []);
-
-  useEffect(() => {
-    if (chartRef.current) {
-      chartRef.current.setOption(option, { notMerge: true });
-    }
-  }, [option]);
 
   return (
     <View
       className={styles.container}
       id={idRef.current}
+      ref={refCallback}
       style={{ height: `${height}px` }}
     />
   );

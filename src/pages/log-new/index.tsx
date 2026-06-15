@@ -197,6 +197,12 @@ const LogNewPage: React.FC = () => {
 
   return (
     <View className={styles.page}>
+      <View className={styles.navBar}>
+        <Text className={styles.navBack} onClick={() => Taro.navigateBack()}>← 返回</Text>
+        <Text className={styles.navTitle}>{isEdit ? '编辑记录' : '新建记录'}</Text>
+        <View className={styles.navPlaceholder} />
+      </View>
+
       <View className={styles.typeSelector}>
         {(['feed', 'diaper', 'sleep', 'other'] as EventType[]).map((type) => (
           <View

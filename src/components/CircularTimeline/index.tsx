@@ -16,10 +16,10 @@ const typeColors: Record<string, string> = {
   other: '#DFE6E9'
 };
 
-const TRACK_COLOR = '#F0F0F0';
-const SHORT_EVENT_DEG = 6;
+const TRACK_COLOR = '#EDEDED';
+const SHORT_EVENT_DEG = 7;
 const HOUR_MARKS = [0, 3, 6, 9, 12, 15, 18, 21];
-const LABEL_RADIUS_PCT = 43;
+const LABEL_RADIUS_PCT = 44;
 
 const CircularTimeline: React.FC<CircularTimelineProps> = ({ events, nowPercent }) => {
   const currentAngle = (nowPercent / 100) * 360;
@@ -36,7 +36,7 @@ const CircularTimeline: React.FC<CircularTimelineProps> = ({ events, nowPercent 
       let durationDeg: number;
 
       if (e.type === 'sleep' && e.sleepData?.durationSec) {
-        durationDeg = (e.sleepData.durationSec / 3600 / 24) * 360;
+        durationDeg = Math.max((e.sleepData.durationSec / 3600 / 24) * 360, 10);
       } else {
         durationDeg = SHORT_EVENT_DEG;
       }
@@ -86,15 +86,21 @@ const CircularTimeline: React.FC<CircularTimelineProps> = ({ events, nowPercent 
   return (
     <View className={styles.container}>
       <View className={styles.ringWrapper}>
-        <View className={styles.ring} style={{ background: gradientStr }} />
-        <View className={styles.innerCircle}>
-          <Text className={styles.currentTime}>{timeStr}</Text>
+        <View
+          className={styles.ring}
+          style={{ background: gradientStr }}
+        >
+          <View className={styles.innerCircle}>
+            <Text className={styles.currentTime}>{timeStr}</Text>
+          </View>
         </View>
+
         <View
           className={styles.pointer}
           style={{ transform: `rotate(${currentAngle}deg)` }}
         />
         <View className={styles.centerDot} />
+
         {HOUR_MARKS.map((h) => (
           <View
             key={`tick-${h}`}
