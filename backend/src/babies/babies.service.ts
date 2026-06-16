@@ -9,13 +9,17 @@ export class BabiesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, dto: CreateBabyDto) {
-    const baby = await this.prisma.baby.create({
-      data: {
-        userId,
-        ...dto,
-        avatarColor: generateAvatarColor(dto.nickname + Date.now()),
-      },
-    });
+    const { id, avatarColor, createdAt, ...rest } = dto;
+
+    const data: any = {
+      userId,
+      ...rest,
+      avatarColor: avatarColor || generateAvatarColor(dto.nickname + Date.now()),
+    };
+    if (id) data.id = id;
+    if (createdAt) data.createdAt = new Date(createdAt);
+
+    const baby = await this.prisma.baby.create({ data });
 
     const settings = await this.prisma.appSettings.findUnique({
       where: { userId },

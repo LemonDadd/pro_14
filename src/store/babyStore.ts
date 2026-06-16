@@ -16,21 +16,11 @@ import type {
   AuthStatus,
   NetworkStatus,
 } from '@/types';
-import {
-  getBabies,
-  saveBabies,
-  getEvents,
-  saveEvents,
-  getGrowthRecords,
-  saveGrowthRecords,
-  getSettings,
-  saveSettings,
-  generateId,
-} from '@/utils/storage';
+import { generateId } from '@/utils/storage';
 import { authService } from '@/services/auth.service';
-import { syncService, SyncState } from '@/services/sync.service';
 import { networkService } from '@/services/network.service';
 import { subscribeApi, ApiError } from '@/api';
+import { storage } from '@/storage';
 
 interface BabyStore {
   babies: Baby[];
@@ -42,7 +32,8 @@ interface BabyStore {
   user: User | null;
   authStatus: AuthStatus;
   network: NetworkStatus;
-  syncState: SyncState;
+  pendingSyncCount: number;
+  isRefreshing: boolean;
   subscription?: {
     templateId?: string;
     subscribed: boolean;
@@ -54,12 +45,12 @@ interface BabyStore {
   initError?: string;
 
   initApp: () => Promise<void>;
-  initStore: () => void;
+  initStore: () => Promise<void>;
 
   login: () => Promise<{ user: User; isNewUser: boolean; hasLocalData: boolean; hasRemoteData: boolean }>;
   logout: () => Promise<void>;
 
-  syncToCloud: () => Promise<{ imported: number; skipped: number } | null>;
+  syncToCloud: () => Promise<number | null>;
   syncFromCloud: (mode?: 'merge' | 'overwrite') => Promise<boolean>;
 
   saveTemplateId: (templateId: string, subscribed?: boolean) => Promise<void>;
@@ -107,6 +98,8 @@ interface BabyStore {
   getWeekEvents: () => BabyEvent[];
   getLastFeedEvent: () => BabyEvent | null;
   getBabyGrowthRecords: () => GrowthRecord[];
+
+  refreshFromCloud: () => Promise<void>;
 }
 
 const AVATAR_COLORS = [
@@ -131,66 +124,58 @@ function resolveCurrentBaby(babies: Baby[], settings: AppSettings): Baby | null 
 
 export const useBabyStore = create<BabyStore>((set, get) => {
   let authUnsub: (() => void) | null = null;
-  let syncUnsub: (() => void) | null = null;
   let netUnsub: (() => void) | null = null;
 
-  const markDirty = () => {
-    const { babies, events, growthRecords, settings } = get();
-    syncService.markDirty({ babies, events, growthRecords, settings });
+  const loadAllFromLocal = async () => {
+    const [babies, events, growthRecords, settings] = await Promise.all([
+      storage.listBabies(),
+      storage.listEvents(),
+      storage.listGrowthRecords(),
+      storage.getSettings(),
+    ]);
+    const currentBaby = resolveCurrentBaby(babies, settings);
+    return { babies, events, growthRecords, settings, currentBaby };
   };
 
-  const hasAnyLocalData = (): boolean => {
-    return (
-      getBabies().length > 0 ||
-      getEvents().length > 0 ||
-      getGrowthRecords().length > 0
-    );
-  };
-
-  const applySnapshot = (snap: {
-    babies: Baby[];
-    events: BabyEvent[];
-    growthRecords: GrowthRecord[];
-    settings: AppSettings;
-  }) => {
-    saveBabies(snap.babies);
-    saveEvents(snap.events);
-    saveGrowthRecords(snap.growthRecords);
-    saveSettings(snap.settings);
-
-    const currentBaby = resolveCurrentBaby(snap.babies, snap.settings);
-    set({
-      babies: snap.babies,
-      events: snap.events,
-      growthRecords: snap.growthRecords,
-      settings: snap.settings,
-      currentBaby,
-    });
-    syncService.captureSnapshot(snap);
+  const refreshStateFromLocal = async () => {
+    const snap = await loadAllFromLocal();
+    set(snap);
+    set({ pendingSyncCount: storage.getPendingCount() });
   };
 
   const ensureSubscriptions = () => {
     if (!authUnsub) {
       authUnsub = authService.subscribe((status, user) => {
         set({ authStatus: status, user });
+        storage.setAuthStatus(status === 'authenticated');
         if (status === 'expired') {
           Taro.showToast({
             title: '登录已过期，请重新登录',
             icon: 'none',
           });
         }
-      });
-    }
-    if (!syncUnsub) {
-      syncUnsub = syncService.subscribe((syncState) => {
-        set({ syncState });
+        if (status === 'authenticated') {
+          get().refreshFromCloud().catch(() => {});
+        }
       });
     }
     if (!netUnsub) {
       netUnsub = networkService.subscribe((network) => {
         set({ network });
+        storage.setNetworkStatus(network.isOnline);
+        if (network.isOnline && authService.isAuthenticated()) {
+          set({ pendingSyncCount: storage.getPendingCount() });
+        }
       });
     }
+  };
+
+  const hasAnyLocalData = (): boolean => {
+    return (
+      get().babies.length > 0 ||
+      get().events.length > 0 ||
+      get().growthRecords.length > 0
+    );
   };
 
   return {
@@ -203,26 +188,22 @@ export const useBabyStore = create<BabyStore>((set, get) => {
     user: null,
     authStatus: 'guest',
     network: { isOnline: true },
-    syncState: syncService.getState(),
+    pendingSyncCount: 0,
+    isRefreshing: false,
     subscription: { subscribed: false },
 
     isInitializing: false,
     hasInitialized: false,
 
-    initStore: () => {
-      const babies = getBabies();
-      const events = getEvents();
-      const growthRecords = getGrowthRecords();
-      const settings = getSettings();
-      const currentBaby = resolveCurrentBaby(babies, settings);
-
-      set({ babies, events, growthRecords, settings, currentBaby });
-      syncService.captureSnapshot({ babies, events, growthRecords, settings });
+    initStore: async () => {
+      const snap = await loadAllFromLocal();
+      set(snap);
+      set({ pendingSyncCount: storage.getPendingCount() });
       console.log(
         '[BabyStore] Initialized with',
-        babies.length,
+        snap.babies.length,
         'babies,',
-        events.length,
+        snap.events.length,
         'events'
       );
     },
@@ -234,13 +215,17 @@ export const useBabyStore = create<BabyStore>((set, get) => {
       set({ isInitializing: true, initError: undefined });
       try {
         networkService.init();
-        set({ network: networkService.getStatus() });
+        const netStatus = networkService.getStatus();
+        set({ network: netStatus });
+        storage.setNetworkStatus(netStatus.isOnline);
+
         set({
           authStatus: authService.getAuthStatus(),
           user: authService.getUser(),
         });
+        storage.setAuthStatus(authService.isAuthenticated());
 
-        get().initStore();
+        await get().initStore();
 
         if (authService.isAuthenticated()) {
           await authService.verifyOrRefresh().catch(() => null);
@@ -256,6 +241,8 @@ export const useBabyStore = create<BabyStore>((set, get) => {
           } catch (e) {
             // ignore - might not have subscribed yet
           }
+
+          get().refreshFromCloud().catch(() => {});
         }
 
         set({ hasInitialized: true });
@@ -268,20 +255,43 @@ export const useBabyStore = create<BabyStore>((set, get) => {
       }
     },
 
+    refreshFromCloud: async () => {
+      if (get().isRefreshing) return;
+      if (!authService.isAuthenticated()) return;
+
+      set({ isRefreshing: true });
+      try {
+        const result = await storage.refreshFromCloud(true);
+        if (result) {
+          await refreshStateFromLocal();
+          console.log('[BabyStore] Refreshed from cloud:',
+            result.babies.length, 'babies,',
+            result.events.length, 'events'
+          );
+        }
+      } catch (e) {
+        console.warn('[BabyStore] refreshFromCloud failed:', e);
+      } finally {
+        set({ isRefreshing: false });
+      }
+    },
+
     login: async () => {
       ensureSubscriptions();
       const hasLocalData = hasAnyLocalData();
       const res = await authService.login();
 
+      storage.setAuthStatus(true);
+
       let hasRemoteData = false;
       try {
-        const remote = await syncService.pullFromCloud();
-        hasRemoteData = !!(
-          remote &&
-          (remote.babies.length > 0 || remote.events.length > 0)
-        );
+        const remote = await storage.refreshFromCloud(true);
+        if (remote) {
+          hasRemoteData = !!(remote.babies.length > 0 || remote.events.length > 0);
+          await refreshStateFromLocal();
+        }
       } catch (e) {
-        // ignore
+        console.warn('[BabyStore] login pull failed:', e);
       }
 
       try {
@@ -297,16 +307,19 @@ export const useBabyStore = create<BabyStore>((set, get) => {
         // ignore
       }
 
+      set({ pendingSyncCount: storage.getPendingCount() });
+
       return { user: res.user, isNewUser: res.isNewUser, hasLocalData, hasRemoteData };
     },
 
     logout: async () => {
       authService.logout();
+      storage.setAuthStatus(false);
       set({
         user: null,
         authStatus: 'guest',
         subscription: { subscribed: false },
-        syncState: { status: 'idle', pendingCount: 0 },
+        pendingSyncCount: 0,
       });
       Taro.showToast({ title: '已退出登录', icon: 'success' });
     },
@@ -316,30 +329,28 @@ export const useBabyStore = create<BabyStore>((set, get) => {
         Taro.showToast({ title: '请先登录', icon: 'none' });
         return null;
       }
-      markDirty();
-      return syncService.pushToCloud();
+      if (!get().network.isOnline) {
+        Taro.showToast({ title: '当前离线，请检查网络', icon: 'none' });
+        return null;
+      }
+      const count = await storage.flushPendingQueue();
+      set({ pendingSyncCount: storage.getPendingCount() });
+      if (count > 0) {
+        Taro.showToast({ title: `已同步 ${count} 条`, icon: 'success' });
+      } else {
+        Taro.showToast({ title: '没有待同步数据', icon: 'none' });
+      }
+      return count;
     },
 
-    syncFromCloud: async (mode: 'merge' | 'overwrite' = 'merge') => {
+    syncFromCloud: async (_mode: 'merge' | 'overwrite' = 'merge') => {
       if (!authService.isAuthenticated()) {
         Taro.showToast({ title: '请先登录', icon: 'none' });
         return false;
       }
-      const remote = await syncService.pullFromCloud();
+      const remote = await storage.refreshFromCloud(true);
       if (!remote) return false;
-
-      if (mode === 'overwrite') {
-        applySnapshot(remote);
-        return true;
-      }
-
-      const { babies, events, growthRecords, settings } = get();
-      const merged = syncService.mergeSnapshots(
-        { babies, events, growthRecords, settings },
-        remote,
-        'remoteFirst'
-      );
-      applySnapshot(merged);
+      await refreshStateFromLocal();
       return true;
     },
 
@@ -373,13 +384,23 @@ export const useBabyStore = create<BabyStore>((set, get) => {
         createdAt: Date.now(),
       };
       const babies = [...get().babies, baby];
-      saveBabies(babies);
-
       const settings = { ...get().settings, currentBabyId: baby.id };
-      saveSettings(settings);
 
       set({ babies, currentBaby: baby, settings });
-      markDirty();
+
+      storage.createBaby({
+        id: baby.id,
+        ...data,
+        avatarColor: baby.avatarColor,
+        createdAt: baby.createdAt,
+      }).then(() => {
+        set({ pendingSyncCount: storage.getPendingCount() });
+      }).catch((e) => {
+        console.warn('[BabyStore] createBaby adapter failed:', e);
+      });
+
+      storage.setCurrentBaby(baby.id).catch(() => {});
+
       console.log('[BabyStore] Added baby:', baby.nickname);
       return baby;
     },
@@ -388,41 +409,51 @@ export const useBabyStore = create<BabyStore>((set, get) => {
       const babies = get().babies.map((b) =>
         b.id === id ? { ...b, ...data } : b
       );
-      saveBabies(babies);
       const currentBaby =
         get().currentBaby?.id === id
           ? babies.find((b) => b.id === id) || null
           : get().currentBaby;
+
       set({ babies, currentBaby });
-      markDirty();
+
+      storage.updateBaby(id, data as any).then(() => {
+        set({ pendingSyncCount: storage.getPendingCount() });
+      }).catch((e) => {
+        console.warn('[BabyStore] updateBaby adapter failed:', e);
+      });
     },
 
     deleteBaby: (id) => {
       const babies = get().babies.filter((b) => b.id !== id);
       const events = get().events.filter((e) => e.babyId !== id);
       const growthRecords = get().growthRecords.filter((g) => g.babyId !== id);
-      saveBabies(babies);
-      saveEvents(events);
-      saveGrowthRecords(growthRecords);
 
       let currentBaby = get().currentBaby;
       let settings = get().settings;
       if (get().currentBaby?.id === id) {
         currentBaby = babies[0] || null;
         settings = { ...settings, currentBabyId: currentBaby?.id || null };
-        saveSettings(settings);
       }
 
       set({ babies, events, growthRecords, currentBaby, settings });
-      markDirty();
+
+      storage.deleteBaby(id).then(() => {
+        set({ pendingSyncCount: storage.getPendingCount() });
+      }).catch((e) => {
+        console.warn('[BabyStore] deleteBaby adapter failed:', e);
+      });
     },
 
     setCurrentBaby: (id) => {
       const baby = get().babies.find((b) => b.id === id) || null;
       const settings = { ...get().settings, currentBabyId: id };
-      saveSettings(settings);
       set({ currentBaby: baby, settings });
-      markDirty();
+
+      storage.setCurrentBaby(id).then(() => {
+        set({ pendingSyncCount: storage.getPendingCount() });
+      }).catch((e) => {
+        console.warn('[BabyStore] setCurrentBaby adapter failed:', e);
+      });
     },
 
     addEvent: (data) => {
@@ -436,9 +467,18 @@ export const useBabyStore = create<BabyStore>((set, get) => {
         ...data,
       };
       const events = [event, ...get().events];
-      saveEvents(events);
       set({ events });
-      markDirty();
+
+      storage.createEvent({
+        id: event.id,
+        babyId: currentBaby.id,
+        ...data,
+      }).then(() => {
+        set({ pendingSyncCount: storage.getPendingCount() });
+      }).catch((e) => {
+        console.warn('[BabyStore] createEvent adapter failed:', e);
+      });
+
       console.log('[BabyStore] Added event:', event.type);
       return event;
     },
@@ -447,16 +487,24 @@ export const useBabyStore = create<BabyStore>((set, get) => {
       const events = get().events.map((e) =>
         e.id === id ? { ...e, ...data } : e
       );
-      saveEvents(events);
       set({ events });
-      markDirty();
+
+      storage.updateEvent(id, data as any).then(() => {
+        set({ pendingSyncCount: storage.getPendingCount() });
+      }).catch((e) => {
+        console.warn('[BabyStore] updateEvent adapter failed:', e);
+      });
     },
 
     deleteEvent: (id) => {
       const events = get().events.filter((e) => e.id !== id);
-      saveEvents(events);
       set({ events });
-      markDirty();
+
+      storage.deleteEvent(id).then(() => {
+        set({ pendingSyncCount: storage.getPendingCount() });
+      }).catch((e) => {
+        console.warn('[BabyStore] deleteEvent adapter failed:', e);
+      });
     },
 
     addGrowthRecord: (data) => {
@@ -470,35 +518,48 @@ export const useBabyStore = create<BabyStore>((set, get) => {
         ...data,
       };
       const growthRecords = [...get().growthRecords, record];
-      saveGrowthRecords(growthRecords);
       set({ growthRecords });
-      markDirty();
+
+      storage.createGrowthRecord({
+        id: record.id,
+        babyId: currentBaby.id,
+        ...data,
+      }).then(() => {
+        set({ pendingSyncCount: storage.getPendingCount() });
+      }).catch((e) => {
+        console.warn('[BabyStore] createGrowthRecord adapter failed:', e);
+      });
+
       return record;
     },
 
     deleteGrowthRecord: (id) => {
       const growthRecords = get().growthRecords.filter((g) => g.id !== id);
-      saveGrowthRecords(growthRecords);
       set({ growthRecords });
-      markDirty();
+
+      storage.deleteGrowthRecord(id).then(() => {
+        set({ pendingSyncCount: storage.getPendingCount() });
+      }).catch((e) => {
+        console.warn('[BabyStore] deleteGrowthRecord adapter failed:', e);
+      });
     },
 
     updateSettings: (data) => {
       const settings = { ...get().settings, ...data };
-      saveSettings(settings);
       set({ settings });
-      markDirty();
+
+      storage.updateSettings(data).then(() => {
+        set({ pendingSyncCount: storage.getPendingCount() });
+      }).catch((e) => {
+        console.warn('[BabyStore] updateSettings adapter failed:', e);
+      });
     },
 
     clearAllData: () => {
-      saveBabies([]);
-      saveEvents([]);
-      saveGrowthRecords([]);
       const defaultSettings: AppSettings = {
         feedReminderInterval: 3,
         currentBabyId: null,
       };
-      saveSettings(defaultSettings);
       set({
         babies: [],
         events: [],
@@ -506,7 +567,28 @@ export const useBabyStore = create<BabyStore>((set, get) => {
         settings: defaultSettings,
         currentBaby: null,
       });
-      markDirty();
+
+      Promise.all([
+        storage.local ? null : null,
+      ]).catch(() => {});
+
+      const clearLocal = async () => {
+        const all = await storage.listEvents();
+        for (const e of all) {
+          await storage.deleteEvent(e.id);
+        }
+        const babies = await storage.listBabies();
+        for (const b of babies) {
+          await storage.deleteBaby(b.id);
+        }
+        const growth = await storage.listGrowthRecords();
+        for (const g of growth) {
+          await storage.deleteGrowthRecord(g.id);
+        }
+        set({ pendingSyncCount: storage.getPendingCount() });
+      };
+      clearLocal().catch(console.error);
+
       console.log('[BabyStore] All data cleared');
     },
 

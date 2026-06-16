@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useDidShow, useDidHide } from '@tarojs/taro';
 import { useBabyStore } from '@/store/babyStore';
-import { syncService } from '@/services/sync.service';
+import { storage } from '@/storage';
 import { authService } from '@/services/auth.service';
 import './app.scss';
 
 function App(props) {
-  const { initApp, isInitializing, hasInitialized } = useBabyStore();
+  const { initApp, isInitializing, hasInitialized, refreshFromCloud } = useBabyStore();
   const initPromiseRef = useRef<Promise<void> | null>(null);
 
   const runInit = () => {
@@ -23,14 +23,17 @@ function App(props) {
   useDidShow(() => {
     runInit().then(() => {
       if (authService.isAuthenticated()) {
-        setTimeout(() => syncService.retryPending(), 800);
+        setTimeout(() => {
+          storage.flushPendingQueue().catch(() => {});
+          refreshFromCloud().catch(() => {});
+        }, 800);
       }
     });
   });
 
   useDidHide(() => {
     if (authService.isAuthenticated()) {
-      syncService.pushToCloud().catch(() => {});
+      storage.flushPendingQueue().catch(() => {});
     }
   });
 

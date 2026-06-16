@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { View, Text } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useBabyStore } from '@/store/babyStore';
-import { syncService } from '@/services/sync.service';
 import styles from './index.module.scss';
 import classnames from 'classnames';
 
@@ -20,7 +19,8 @@ const SettingsPage: React.FC = () => {
     user,
     authStatus,
     network,
-    syncState,
+    pendingSyncCount,
+    isRefreshing,
     subscription,
     login,
     logout,
@@ -172,12 +172,14 @@ const SettingsPage: React.FC = () => {
     if (isSyncingUp) return;
     setIsSyncingUp(true);
     try {
-      const res = await syncToCloud();
-      if (res) {
+      const count = await syncToCloud();
+      if (count != null && count > 0) {
         Taro.showToast({
-          title: `已同步 ${res.imported} 条`,
+          title: `已同步 ${count} 项`,
           icon: 'success',
         });
+      } else if (count === 0) {
+        Taro.showToast({ title: '没有待同步数据', icon: 'none' });
       }
     } catch (e: any) {
       Taro.showModal({
@@ -255,27 +257,7 @@ const SettingsPage: React.FC = () => {
     });
   };
 
-  const lastSyncAt = syncState.lastSyncAt || syncService.getLastSyncAt();
-  const syncBusy = syncState.status === 'pulling' || syncState.status === 'pushing';
-  const syncBtnDisabled = authStatus !== 'authenticated' || syncBusy;
-
-  const formatLastSync = () => {
-    if (!lastSyncAt) return '从未同步';
-    const diff = Date.now() - lastSyncAt;
-    if (diff < 60_000) return '刚刚';
-    if (diff < 3600_000) return `${Math.floor(diff / 60_000)} 分钟前`;
-    if (diff < 86400_000) return `${Math.floor(diff / 3600_000)} 小时前`;
-    const d = new Date(lastSyncAt);
-    return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  };
-
-  const syncStatusLabel: Record<string, string> = {
-    idle: '已同步',
-    pulling: '正在拉取...',
-    pushing: '正在上传...',
-    error: '同步异常',
-    conflict: '存在冲突',
-  };
+  const syncBtnDisabled = authStatus !== 'authenticated' || !network.isOnline;
 
   const renderAccountCard = () => {
     const isAuthed = authStatus === 'authenticated';
@@ -423,46 +405,32 @@ const SettingsPage: React.FC = () => {
             </Text>
           </View>
           <Text
-            className={classnames(styles.syncStatus, styles[syncState.status] || styles.idle)}
+            className={classnames(styles.syncStatus, isAuthed && network.isOnline ? styles.idle : styles.off)}
           >
-            {syncStatusLabel[syncState.status] || syncState.status}
+            {isAuthed ? (network.isOnline ? (pendingSyncCount > 0 ? `待同步 ${pendingSyncCount} 项` : '实时同步') : '离线') : '未登录'}
           </Text>
         </View>
-
-        <View className={styles.syncStatusRow}>
-          <View className={styles.subLabel}>
-            <Text className={styles.subName}>上次同步</Text>
-            <Text className={styles.subNote}>
-              {formatLastSync()}
-              {syncState.pendingCount > 0 &&
-                ` · 待同步 ${syncState.pendingCount} 项`}
-            </Text>
-          </View>
-        </View>
-
-        {syncState.error && (
-          <Text className={styles.syncHint} style={{ color: '#B24A3A' }}>
-            ⚠️ {syncState.error}
-          </Text>
-        )}
 
         <View className={styles.syncRow}>
           <View
             className={classnames(styles.syncBtn, styles.up, { disabled: syncBtnDisabled || isSyncingUp })}
             onClick={handleSyncUp}
           >
-            {isSyncingUp || syncState.status === 'pushing' ? '同步中...' : '☁️ 同步到云端'}
+            {isSyncingUp ? '同步中...' : '☁️ 上传待同步项'}
           </View>
           <View
-            className={classnames(styles.syncBtn, styles.down, { disabled: syncBtnDisabled || isSyncingDown })}
+            className={classnames(styles.syncBtn, styles.down, { disabled: syncBtnDisabled || isSyncingDown || isRefreshing })}
             onClick={handleSyncDown}
           >
-            {isSyncingDown || syncState.status === 'pulling' ? '拉取中...' : '⬇️ 从云端合并'}
+            {isSyncingDown || isRefreshing ? '拉取中...' : '⬇️ 从云端合并'}
           </View>
         </View>
 
         {!isAuthed && (
-          <Text className={styles.syncHint}>💡 登录后自动开启后台同步</Text>
+          <Text className={styles.syncHint}>💡 登录后自动开启实时同步</Text>
+        )}
+        {isAuthed && !network.isOnline && (
+          <Text className={styles.syncHint}>📴 离线时数据暂存本地，联网后自动同步</Text>
         )}
       </View>
     );

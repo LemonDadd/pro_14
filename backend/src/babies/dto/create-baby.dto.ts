@@ -1,7 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsNumber, IsIn, Min, Max } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, IsNumber, IsIn, Min, Max, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateBabyDto {
+  @ApiPropertyOptional({ description: '指定 ID（导入/同步时使用，不传则自动生成）' })
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
   @ApiProperty({ description: '宝宝昵称' })
   @IsString()
   @IsNotEmpty({ message: '昵称不能为空' })
@@ -31,4 +36,14 @@ export class CreateBabyDto {
   @ApiProperty({ description: '喂养偏好', enum: ['breast', 'formula', 'mixed'] })
   @IsIn(['breast', 'formula', 'mixed'], { message: '喂养偏好必须是 breast/formula/mixed' })
   feedPreference: string;
+
+  @ApiPropertyOptional({ description: '头像颜色' })
+  @IsOptional()
+  @IsString()
+  avatarColor?: string;
+
+  @ApiPropertyOptional({ description: '创建时间戳（导入时使用）' })
+  @IsOptional()
+  @IsNumber()
+  createdAt?: number;
 }

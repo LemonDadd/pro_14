@@ -1,6 +1,5 @@
 import Taro from '@tarojs/taro';
 import type { NetworkStatus } from '@/types';
-import { syncService } from './sync.service';
 import { authService } from './auth.service';
 
 class NetworkService {
@@ -32,7 +31,7 @@ class NetworkService {
         this.notifyListeners();
 
         if (!prevOnline && this.status.isOnline) {
-          console.log('[Network] back online, retrying sync and auth');
+          console.log('[Network] back online');
           setTimeout(() => this.onOnline(), 1000);
         } else if (prevOnline && !this.status.isOnline) {
           console.log('[Network] offline');
@@ -47,7 +46,6 @@ class NetworkService {
     if (authService.getAuthStatus() === 'expired') {
       authService.verifyOrRefresh().catch(() => {});
     }
-    syncService.retryPending();
   }
 
   getStatus(): NetworkStatus {

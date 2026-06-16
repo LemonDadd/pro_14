@@ -2,6 +2,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, IsNumber, IsOptional, Min, Max } from 'class-validator';
 
 export class CreateGrowthRecordDto {
+  @ApiPropertyOptional({ description: '指定 ID（导入/同步时使用，不传则自动生成）' })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
   @ApiProperty({ description: '宝宝ID' })
   @IsString()
   @IsNotEmpty({ message: '宝宝ID不能为空' })

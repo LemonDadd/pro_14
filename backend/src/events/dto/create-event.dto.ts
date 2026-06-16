@@ -67,6 +67,11 @@ export class OtherDataDto {
 }
 
 export class CreateEventDto {
+  @ApiPropertyOptional({ description: '指定 ID（导入/同步时使用，不传则自动生成）' })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
   @ApiProperty({ description: '宝宝ID' })
   @IsString()
   @IsNotEmpty({ message: '宝宝ID不能为空' })

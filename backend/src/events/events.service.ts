@@ -20,6 +20,7 @@ export class EventsService {
       timestamp: BigInt(dto.timestamp),
       note: dto.note,
     };
+    if (dto.id) data.id = dto.id;
 
     if (dto.feedData) data.feedData = JSON.stringify(dto.feedData);
     if (dto.diaperData) data.diaperData = JSON.stringify(dto.diaperData);
