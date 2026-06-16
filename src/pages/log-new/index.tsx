@@ -3,7 +3,6 @@ import { View, Text, Input } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import { useBabyStore } from '@/store/babyStore';
 import type { EventType, FeedSide, DiaperType, BabyEvent } from '@/types';
-import { formatDuration } from '@/utils/time';
 import EmptyState from '@/components/EmptyState';
 import styles from './index.module.scss';
 import classnames from 'classnames';
@@ -169,10 +168,10 @@ const LogNewPage: React.FC = () => {
 
     try {
       if (isEdit && editingEvent) {
-        updateEvent(editingEvent.id, eventData);
+        updateEvent(editingEvent.id, eventData as any);
         Taro.showToast({ title: '修改成功', icon: 'success' });
       } else {
-        addEvent(eventData);
+        addEvent(eventData as any);
         Taro.showToast({ title: '记录成功', icon: 'success' });
       }
       setTimeout(() => {

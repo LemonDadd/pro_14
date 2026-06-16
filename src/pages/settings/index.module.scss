@@ -131,3 +131,256 @@
   color: $color-text-tertiary;
   margin-top: $spacing-xs;
 }
+
+/* ===== Account Card ===== */
+.accountCard {
+  background: linear-gradient(135deg, #FF8FB1 0%, #FFB6C9 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-xl;
+  color: $color-text-white;
+}
+
+.accountRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+}
+
+.accountInfo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  min-width: 0;
+}
+
+.accountAvatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  flex-shrink: 0;
+  border: 4rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.accountMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.accountName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountSubtitle {
+  font-size: $font-size-xs;
+  opacity: 0.85;
+}
+
+.accountBtn {
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  background: rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+  transition: all $transition-base;
+
+  &.primary {
+    background: $color-text-white;
+    color: #E16A93;
+  }
+}
+
+.guestCard {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.guestIcon {
+  font-size: 56rpx;
+}
+
+.guestMeta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.guestTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+}
+
+.guestTip {
+  font-size: $font-size-xs;
+  opacity: 0.85;
+}
+
+/* ===== Subscribe Card ===== */
+.subRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md 0;
+  border-bottom: 2rpx solid $color-divider;
+
+  &:last-child { border-bottom: none; padding-bottom: 0; }
+  &:first-child { padding-top: 0; }
+}
+
+.subLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.subName {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.subNote {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.subSwitch {
+  width: 96rpx;
+  height: 56rpx;
+  border-radius: 28rpx;
+  background: #E5E7EB;
+  position: relative;
+  transition: all $transition-base;
+  flex-shrink: 0;
+
+  &.on {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  }
+}
+
+.subSwitchKnob {
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
+  transition: all $transition-base;
+
+  .on & {
+    transform: translateX(40rpx);
+  }
+}
+
+.subBadge {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  background: rgba(168, 230, 207, 0.25);
+  color: #2E7D5C;
+  margin-left: $spacing-xs;
+
+  &.off {
+    background: rgba(229, 231, 235, 0.8);
+    color: $color-text-secondary;
+  }
+}
+
+/* ===== Sync Card ===== */
+.syncStatusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md 0;
+  border-bottom: 2rpx solid $color-divider;
+}
+
+.networkDot {
+  display: inline-block;
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  margin-right: 12rpx;
+  vertical-align: middle;
+  background: #34C759;
+
+  &.off { background: #999; }
+}
+
+.syncStatus {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+
+  &.idle { background: rgba(52, 199, 89, 0.12); color: #2E7D5C; }
+  &.pulling, &.pushing { background: rgba(255, 143, 177, 0.18); color: #E16A93; }
+  &.error { background: rgba(225, 112, 85, 0.15); color: #B24A3A; }
+}
+
+.syncHint {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-sm;
+}
+
+.syncRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+  margin-top: $spacing-lg;
+}
+
+.syncBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: $button-height-md;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+
+  &.up {
+    background: rgba(255, 143, 177, 0.12);
+    color: $color-primary;
+  }
+
+  &.down {
+    background: rgba(123, 200, 255, 0.15);
+    color: #2563A8;
+  }
+
+  &:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+}
+
+.syncBtn:global(.disabled) {
+  opacity: 0.45;
+  pointer-events: none;
+}
+

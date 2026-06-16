@@ -1,3 +1,14 @@
+export interface User {
+  id: string;
+  openid: string;
+  nickname?: string;
+  avatarUrl?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type AuthStatus = 'guest' | 'authenticated' | 'checking' | 'expired';
+
 export type BabyGender = 'boy' | 'girl';
 
 export type FeedPreference = 'breast' | 'formula' | 'mixed';
@@ -66,3 +77,22 @@ export interface AppSettings {
   feedReminderInterval: number;
   currentBabyId: string | null;
 }
+
+export type SyncOperation =
+  | { type: 'create'; entity: 'baby' | 'event' | 'growthRecord' | 'settings'; data: any }
+  | { type: 'update'; entity: 'baby' | 'event' | 'growthRecord' | 'settings'; id: string; data: any }
+  | { type: 'delete'; entity: 'baby' | 'event' | 'growthRecord'; id: string };
+
+export interface SyncQueueItem {
+  id: string;
+  operation: SyncOperation;
+  retryCount: number;
+  createdAt: number;
+  lastError?: string;
+}
+
+export interface NetworkStatus {
+  isOnline: boolean;
+  networkType?: string;
+}
+
