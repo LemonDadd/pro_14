@@ -27,6 +27,7 @@ async function bootstrap() {
     .addTag('生长记录', '体重身长记录与曲线')
     .addTag('用户设置', '喂奶间隔、当前宝宝等偏好设置')
     .addTag('数据同步', '本地数据批量导入/全量导出')
+    .addTag('订阅消息', '微信订阅消息模板与喂奶提醒推送')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

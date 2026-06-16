@@ -20,6 +20,7 @@ model User {
   events         BabyEvent[]
   growthRecords  GrowthRecord[]
   settings       AppSettings?
+  subscriptions  UserSubscription?
 }
 
 model Baby {
@@ -88,4 +89,19 @@ model AppSettings {
   updatedAt            DateTime @updatedAt
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserSubscription {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  templateId          String
+  subscribed          Boolean  @default(true)
+  lastReminderSentAt  BigInt?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([subscribed])
 }

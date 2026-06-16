@@ -8,6 +8,7 @@ import { EventsModule } from './events/events.module';
 import { GrowthRecordsModule } from './growth-records/growth-records.module';
 import { SettingsModule } from './settings/settings.module';
 import { SyncModule } from './sync/sync.module';
+import { SubscribeModule } from './subscribe/subscribe.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
@@ -20,6 +21,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     GrowthRecordsModule,
     SettingsModule,
     SyncModule,
+    SubscribeModule,
   ],
   providers: [
     {
