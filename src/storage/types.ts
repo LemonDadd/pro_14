@@ -73,6 +73,28 @@ export interface FullSnapshot {
   settings: AppSettings;
 }
 
+export interface EventSummaryItem {
+  type: EventType;
+  count: number;
+  feedTotalMl: number;
+  sleepTotalMinutes: number;
+}
+
+export interface TodaySummaryResponse {
+  date: string;
+  summaries: EventSummaryItem[];
+  lastFeedAt?: number;
+}
+
+export interface WeekSummaryResponse {
+  startDate: string;
+  endDate: string;
+  daily: Array<{
+    date: string;
+    summaries: EventSummaryItem[];
+  }>;
+}
+
 export interface StorageAdapter {
   readonly name: string;
 
@@ -90,6 +112,8 @@ export interface StorageAdapter {
   createEvent(input: CreateEventInput): Promise<BabyEvent>;
   updateEvent(id: string, input: UpdateEventInput): Promise<BabyEvent>;
   deleteEvent(id: string): Promise<void>;
+  summaryToday(babyId?: string): Promise<TodaySummaryResponse>;
+  summaryWeek(babyId?: string): Promise<WeekSummaryResponse>;
 
   // ===== Growth Records =====
   listGrowthRecords(options?: ListGrowthOptions): Promise<GrowthRecord[]>;

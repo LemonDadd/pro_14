@@ -17,60 +17,102 @@ interface DayStat {
 }
 
 const StatsPage: React.FC = () => {
-  const { currentBaby, initStore, getWeekEvents, getTodayEvents } = useBabyStore();
+  const {
+    currentBaby,
+    initStore,
+    getTodayEvents,
+    todayStats,
+    weekStats,
+    isStatsLoading,
+    fetchStats,
+  } = useBabyStore();
 
   useEffect(() => {
     initStore();
   }, [initStore]);
 
-  const weekEvents = currentBaby ? getWeekEvents() : [];
+  useEffect(() => {
+    if (currentBaby) {
+      fetchStats();
+    }
+  }, [currentBaby, fetchStats]);
+
   const todayEvents = currentBaby ? getTodayEvents() : [];
 
-  const todayStats = useMemo(() => {
+  const dayLabels = ['7天前', '6天前', '5天前', '4天前', '前天', '昨天', '今天'];
+
+  const sideCounts = useMemo(() => {
+    const result: Record<string, number> = { L: 0, R: 0, bottle: 0 };
+    todayEvents.forEach((e) => {
+      if (e.type === 'feed' && e.feedData?.side) {
+        result[e.feedData.side]++;
+      }
+    });
+    return result;
+  }, [todayEvents]);
+
+  const todaySummary = useMemo(() => {
+    if (todayStats) {
+      const byType: Record<string, any> = {};
+      for (const s of todayStats.summaries) {
+        byType[s.type] = s;
+      }
+      return {
+        totalMl: byType.feed?.feedTotalMl || 0,
+        feedCount: byType.feed?.count || 0,
+        diaperCount: byType.diaper?.count || 0,
+        sleepSec: (byType.sleep?.sleepTotalMinutes || 0) * 60,
+      };
+    }
     const today = todayEvents;
     let totalMl = 0;
     let feedCount = 0;
     let diaperCount = 0;
     let sleepSec = 0;
-    const sideCounts: Record<string, number> = { L: 0, R: 0, bottle: 0 };
-
     today.forEach((e) => {
       if (e.type === 'feed') {
         feedCount++;
         totalMl += e.feedData?.amountMl || 0;
-        if (e.feedData?.side) {
-          sideCounts[e.feedData.side]++;
-        }
       } else if (e.type === 'diaper') {
         diaperCount++;
       } else if (e.type === 'sleep') {
         sleepSec += e.sleepData?.durationSec || 0;
       }
     });
+    return { totalMl, feedCount, diaperCount, sleepSec };
+  }, [todayStats, todayEvents]);
 
-    return { totalMl, feedCount, diaperCount, sleepSec, sideCounts };
-  }, [todayEvents]);
-
-  const weekStats: DayStat[] = useMemo(() => {
+  const weekData: DayStat[] = useMemo(() => {
+    if (weekStats) {
+      return weekStats.daily.map((d, i) => {
+        const byType: Record<string, any> = {};
+        for (const s of d.summaries) {
+          byType[s.type] = s;
+        }
+        return {
+          date: d.date,
+          label: dayLabels[i],
+          totalMl: byType.feed?.feedTotalMl || 0,
+          feedCount: byType.feed?.count || 0,
+          diaperCount: byType.diaper?.count || 0,
+          sleepSec: (byType.sleep?.sleepTotalMinutes || 0) * 60,
+        };
+      });
+    }
     const days: DayStat[] = [];
-    const dayLabels = ['今天', '昨天', '前天', '4天前', '5天前', '6天前', '7天前'];
-
-    for (let i = 0; i < 7; i++) {
+    for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       date.setHours(0, 0, 0, 0);
       const dayStart = date.getTime();
       const dayEnd = dayStart + 24 * 60 * 60 * 1000;
-
-      const dayEvents = weekEvents.filter(
+      const dayEvents = todayEvents.slice().filter(
         (e) => e.timestamp >= dayStart && e.timestamp < dayEnd
       );
-
       let totalMl = 0;
       let feedCount = 0;
       let diaperCount = 0;
       let sleepSec = 0;
-
       dayEvents.forEach((e) => {
         if (e.type === 'feed') {
           feedCount++;
@@ -81,22 +123,20 @@ const StatsPage: React.FC = () => {
           sleepSec += e.sleepData?.durationSec || 0;
         }
       });
-
       days.push({
         date: formatDate(dayStart),
-        label: dayLabels[i],
+        label: dayLabels[6 - i],
         totalMl,
         feedCount,
         diaperCount,
-        sleepSec
+        sleepSec,
       });
     }
-
-    return days.reverse();
-  }, [weekEvents]);
+    return days;
+  }, [weekStats, todayEvents]);
 
   const chartOption = useMemo(() => {
-    if (weekStats.length === 0) return {};
+    if (weekData.length === 0) return {};
 
     return {
       grid: {
@@ -104,7 +144,7 @@ const StatsPage: React.FC = () => {
         right: 20,
         bottom: 30,
         left: 45,
-        containLabel: false
+        containLabel: false,
       },
       tooltip: {
         trigger: 'axis' as const,
@@ -115,26 +155,26 @@ const StatsPage: React.FC = () => {
         formatter: (params: any) => {
           const p = params[0];
           return `${p.name}<br/>奶量: <b>${p.value}ml</b>`;
-        }
+        },
       },
       xAxis: {
         type: 'category' as const,
-        data: weekStats.map((d) => d.label),
+        data: weekData.map((d) => d.label),
         axisLine: { lineStyle: { color: '#FFE0EA' } },
         axisTick: { show: false },
-        axisLabel: { color: '#B2BEC3', fontSize: 10 }
+        axisLabel: { color: '#B2BEC3', fontSize: 10 },
       },
       yAxis: {
         type: 'value' as const,
         axisLine: { show: false },
         axisTick: { show: false },
         splitLine: { lineStyle: { color: '#FFF0F4', type: 'dashed' as const } },
-        axisLabel: { color: '#B2BEC3', fontSize: 10 }
+        axisLabel: { color: '#B2BEC3', fontSize: 10 },
       },
       series: [
         {
           type: 'line',
-          data: weekStats.map((d) => d.totalMl),
+          data: weekData.map((d) => d.totalMl),
           smooth: true,
           symbol: 'circle',
           symbolSize: 8,
@@ -145,14 +185,14 @@ const StatsPage: React.FC = () => {
               x: 0, y: 0, x2: 1, y2: 0,
               colorStops: [
                 { offset: 0, color: '#FF8FB1' },
-                { offset: 1, color: '#FFB3CC' }
-              ]
-            }
+                { offset: 1, color: '#FFB3CC' },
+              ],
+            },
           },
           itemStyle: {
             color: '#FF8FB1',
             borderWidth: 2,
-            borderColor: '#fff'
+            borderColor: '#fff',
           },
           areaStyle: {
             color: {
@@ -160,16 +200,16 @@ const StatsPage: React.FC = () => {
               x: 0, y: 0, x2: 0, y2: 1,
               colorStops: [
                 { offset: 0, color: 'rgba(255,143,177,0.25)' },
-                { offset: 1, color: 'rgba(255,143,177,0.02)' }
-              ]
-            }
-          }
-        }
-      ]
+                { offset: 1, color: 'rgba(255,143,177,0.02)' },
+              ],
+            },
+          },
+        },
+      ],
     };
-  }, [weekStats]);
+  }, [weekData]);
 
-  const sleepHours = (todayStats.sleepSec / 3600).toFixed(1);
+  const sleepHours = (todaySummary.sleepSec / 3600).toFixed(1);
 
   if (!currentBaby) {
     return (
@@ -187,15 +227,18 @@ const StatsPage: React.FC = () => {
       <View className={styles.header}>
         <Text className={styles.pageTitle}>数据统计</Text>
         <Text className={styles.pageSubtitle}>{currentBaby.nickname} 的喂养记录</Text>
+        {isStatsLoading && (
+          <Text className={styles.loadingHint}>统计数据加载中...</Text>
+        )}
       </View>
 
       <View className={styles.statsRow}>
-        <StatCard label="今日奶量" value={todayStats.totalMl} unit="ml" color="#FF8FB1" />
-        <StatCard label="尿布次数" value={todayStats.diaperCount} unit="次" color="#A8E6CF" />
+        <StatCard label="今日奶量" value={todaySummary.totalMl} unit="ml" color="#FF8FB1" />
+        <StatCard label="尿布次数" value={todaySummary.diaperCount} unit="次" color="#A8E6CF" />
       </View>
 
       <View className={styles.statsRow}>
-        <StatCard label="喂奶次数" value={todayStats.feedCount} unit="次" color="#FF8FB1" />
+        <StatCard label="喂奶次数" value={todaySummary.feedCount} unit="次" color="#FF8FB1" />
         <StatCard label="睡眠时长" value={sleepHours} unit="h" color="#7BC8FF" />
       </View>
 
@@ -219,30 +262,30 @@ const StatsPage: React.FC = () => {
               <View className={styles.feedTypeItem}>
                 <View className={styles.feedDot} />
                 <Text className={styles.feedTypeLabel}>左侧</Text>
-                <Text className={styles.feedTypeValue}>{todayStats.sideCounts.L} 次</Text>
+                <Text className={styles.feedTypeValue}>{sideCounts.L} 次</Text>
               </View>
               <View className={styles.feedTypeItem}>
                 <View className={styles.feedDot} />
                 <Text className={styles.feedTypeLabel}>右侧</Text>
-                <Text className={styles.feedTypeValue}>{todayStats.sideCounts.R} 次</Text>
+                <Text className={styles.feedTypeValue}>{sideCounts.R} 次</Text>
               </View>
               <View className={styles.feedTypeItem}>
                 <View className={styles.feedDot} />
                 <Text className={styles.feedTypeLabel}>瓶喂</Text>
-                <Text className={styles.feedTypeValue}>{todayStats.sideCounts.bottle} 次</Text>
+                <Text className={styles.feedTypeValue}>{sideCounts.bottle} 次</Text>
               </View>
             </View>
           </View>
           <View className={styles.detailRow}>
             <Text className={styles.detailLabel}>平均每次奶量</Text>
             <Text className={styles.detailValue}>
-              {todayStats.feedCount > 0 ? Math.round(todayStats.totalMl / todayStats.feedCount) : 0} ml
+              {todaySummary.feedCount > 0 ? Math.round(todaySummary.totalMl / todaySummary.feedCount) : 0} ml
             </Text>
           </View>
           <View className={styles.detailRow}>
             <Text className={styles.detailLabel}>平均喂奶间隔</Text>
             <Text className={styles.detailValue}>
-              {todayStats.feedCount > 1 ? (24 / todayStats.feedCount).toFixed(1) : '-'} h
+              {todaySummary.feedCount > 1 ? (24 / todaySummary.feedCount).toFixed(1) : '-'} h
             </Text>
           </View>
         </View>

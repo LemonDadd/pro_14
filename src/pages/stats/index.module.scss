@@ -22,6 +22,18 @@
   color: $color-text-secondary;
 }
 
+.loadingHint {
+  font-size: $font-size-xs;
+  color: #B2BEC3;
+  margin-top: $spacing-xs;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 .statsRow {
   display: flex;
   gap: $spacing-md;

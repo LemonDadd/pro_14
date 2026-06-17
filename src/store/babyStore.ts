@@ -21,6 +21,10 @@ import { authService } from '@/services/auth.service';
 import { networkService } from '@/services/network.service';
 import { subscribeApi, ApiError } from '@/api';
 import { storage } from '@/storage';
+import type {
+  TodaySummaryResponse,
+  WeekSummaryResponse,
+} from '@/storage/types';
 
 interface BabyStore {
   babies: Baby[];
@@ -28,6 +32,10 @@ interface BabyStore {
   growthRecords: GrowthRecord[];
   settings: AppSettings;
   currentBaby: Baby | null;
+
+  todayStats: TodaySummaryResponse | null;
+  weekStats: WeekSummaryResponse | null;
+  isStatsLoading: boolean;
 
   user: User | null;
   authStatus: AuthStatus;
@@ -99,6 +107,7 @@ interface BabyStore {
   getLastFeedEvent: () => BabyEvent | null;
   getBabyGrowthRecords: () => GrowthRecord[];
 
+  fetchStats: (force?: boolean) => Promise<void>;
   refreshFromCloud: () => Promise<void>;
 }
 
@@ -184,6 +193,10 @@ export const useBabyStore = create<BabyStore>((set, get) => {
     growthRecords: [],
     settings: { feedReminderInterval: 3, currentBabyId: null },
     currentBaby: null,
+
+    todayStats: null,
+    weekStats: null,
+    isStatsLoading: false,
 
     user: null,
     authStatus: 'guest',
@@ -273,6 +286,26 @@ export const useBabyStore = create<BabyStore>((set, get) => {
         console.warn('[BabyStore] refreshFromCloud failed:', e);
       } finally {
         set({ isRefreshing: false });
+      }
+    },
+
+    fetchStats: async (force = false) => {
+      const { currentBaby, isStatsLoading, todayStats, weekStats } = get();
+      if (!currentBaby) return;
+      if (isStatsLoading && !force) return;
+      if (todayStats && weekStats && !force) return;
+
+      set({ isStatsLoading: true });
+      try {
+        const [today, week] = await Promise.all([
+          storage.summaryToday(currentBaby.id),
+          storage.summaryWeek(currentBaby.id),
+        ]);
+        set({ todayStats: today, weekStats: week });
+      } catch (e) {
+        console.warn('[BabyStore] fetchStats failed:', e);
+      } finally {
+        set({ isStatsLoading: false });
       }
     },
 
@@ -475,9 +508,12 @@ export const useBabyStore = create<BabyStore>((set, get) => {
         ...data,
       }).then(() => {
         set({ pendingSyncCount: storage.getPendingCount() });
+        get().fetchStats(true);
       }).catch((e) => {
         console.warn('[BabyStore] createEvent adapter failed:', e);
       });
+
+      set({ todayStats: null, weekStats: null });
 
       console.log('[BabyStore] Added event:', event.type);
       return event;
@@ -491,6 +527,8 @@ export const useBabyStore = create<BabyStore>((set, get) => {
 
       storage.updateEvent(id, data as any).then(() => {
         set({ pendingSyncCount: storage.getPendingCount() });
+        set({ todayStats: null, weekStats: null });
+        get().fetchStats(true);
       }).catch((e) => {
         console.warn('[BabyStore] updateEvent adapter failed:', e);
       });
@@ -502,6 +540,8 @@ export const useBabyStore = create<BabyStore>((set, get) => {
 
       storage.deleteEvent(id).then(() => {
         set({ pendingSyncCount: storage.getPendingCount() });
+        set({ todayStats: null, weekStats: null });
+        get().fetchStats(true);
       }).catch((e) => {
         console.warn('[BabyStore] deleteEvent adapter failed:', e);
       });

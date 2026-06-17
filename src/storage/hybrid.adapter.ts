@@ -19,6 +19,8 @@ import type {
   ListEventsOptions,
   ListGrowthOptions,
   FullSnapshot,
+  TodaySummaryResponse,
+  WeekSummaryResponse,
 } from './types';
 
 export type WriteMode = 'api-first' | 'local-first';
@@ -320,6 +322,28 @@ export class HybridStorageAdapter implements StorageAdapter {
       async () => { await this.api.deleteEvent(id); },
       async () => { await this.local.deleteEvent(id); },
     );
+  }
+
+  async summaryToday(babyId?: string): Promise<TodaySummaryResponse> {
+    if (this.shouldUseApi()) {
+      try {
+        return await this.api.summaryToday(babyId);
+      } catch (e: any) {
+        console.warn('[HybridAdapter] summaryToday API failed, fallback local:', e.message);
+      }
+    }
+    return this.local.summaryToday(babyId);
+  }
+
+  async summaryWeek(babyId?: string): Promise<WeekSummaryResponse> {
+    if (this.shouldUseApi()) {
+      try {
+        return await this.api.summaryWeek(babyId);
+      } catch (e: any) {
+        console.warn('[HybridAdapter] summaryWeek API failed, fallback local:', e.message);
+      }
+    }
+    return this.local.summaryWeek(babyId);
   }
 
   // ===== Growth Records =====

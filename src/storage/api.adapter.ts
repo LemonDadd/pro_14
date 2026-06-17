@@ -23,6 +23,8 @@ import type {
   ListEventsOptions,
   ListGrowthOptions,
   FullSnapshot,
+  TodaySummaryResponse,
+  WeekSummaryResponse,
 } from './types';
 
 function toTimestamp(v: any): number {
@@ -178,6 +180,45 @@ export class ApiStorageAdapter implements StorageAdapter {
 
   async deleteEvent(id: string): Promise<void> {
     await eventsApi.remove(id);
+  }
+
+  async summaryToday(babyId?: string): Promise<TodaySummaryResponse> {
+    const res = await eventsApi.summaryToday(babyId);
+    return this.transformSummaryToday(res);
+  }
+
+  async summaryWeek(babyId?: string): Promise<WeekSummaryResponse> {
+    const res = await eventsApi.summaryWeek(babyId);
+    return this.transformSummaryWeek(res);
+  }
+
+  private transformSummaryToday(r: any): TodaySummaryResponse {
+    return {
+      date: r.date,
+      summaries: (r.summaries || []).map((s: any) => ({
+        type: s.type,
+        count: Number(s.count || 0),
+        feedTotalMl: Number(s.feedTotalMl || 0),
+        sleepTotalMinutes: Number(s.sleepTotalMinutes || 0),
+      })),
+      lastFeedAt: r.lastFeedAt != null ? toTimestamp(r.lastFeedAt) : undefined,
+    };
+  }
+
+  private transformSummaryWeek(r: any): WeekSummaryResponse {
+    return {
+      startDate: r.startDate,
+      endDate: r.endDate,
+      daily: (r.daily || []).map((d: any) => ({
+        date: d.date,
+        summaries: (d.summaries || []).map((s: any) => ({
+          type: s.type,
+          count: Number(s.count || 0),
+          feedTotalMl: Number(s.feedTotalMl || 0),
+          sleepTotalMinutes: Number(s.sleepTotalMinutes || 0),
+        })),
+      })),
+    };
   }
 
   // ===== Growth Records =====

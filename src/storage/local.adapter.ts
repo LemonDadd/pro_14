@@ -27,6 +27,9 @@ import type {
   ListEventsOptions,
   ListGrowthOptions,
   FullSnapshot,
+  TodaySummaryResponse,
+  WeekSummaryResponse,
+  EventSummaryItem,
 } from './types';
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -178,6 +181,84 @@ export class LocalStorageAdapter implements StorageAdapter {
   async deleteEvent(id: string): Promise<void> {
     const events = getEvents().filter((e) => e.id !== id);
     saveEvents(events);
+  }
+
+  private sumarizeEvents(events: BabyEvent[]): EventSummaryItem[] {
+    const summaryByType = new Map<string, EventSummaryItem>();
+    const ensure = (type: string): EventSummaryItem => {
+      if (!summaryByType.has(type)) {
+        summaryByType.set(type, { type: type as any, count: 0, feedTotalMl: 0, sleepTotalMinutes: 0 });
+      }
+      return summaryByType.get(type)!;
+    };
+    let lastFeedAt: number | undefined;
+    for (const e of events) {
+      const s = ensure(e.type);
+      s.count++;
+      if (e.type === 'feed') {
+        s.feedTotalMl += e.feedData?.amountMl || 0;
+        if (!lastFeedAt || e.timestamp > lastFeedAt) {
+          lastFeedAt = e.timestamp;
+        }
+      } else if (e.type === 'sleep') {
+        s.sleepTotalMinutes += Math.floor((e.sleepData?.durationSec || 0) / 60);
+      }
+    }
+    return Array.from(summaryByType.values());
+  }
+
+  async summaryToday(babyId?: string): Promise<TodaySummaryResponse> {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = start.getTime() + 24 * 60 * 60 * 1000;
+    let events = getEvents().filter((e) => e.timestamp >= start.getTime() && e.timestamp < end);
+    if (babyId) events = events.filter((e) => e.babyId === babyId);
+    const summaries = this.sumarizeEvents(events);
+    let lastFeedAt: number | undefined;
+    for (const e of events) {
+      if (e.type === 'feed' && (!lastFeedAt || e.timestamp > lastFeedAt)) {
+        lastFeedAt = e.timestamp;
+      }
+    }
+    return {
+      date: this.formatDate(start.getTime()),
+      summaries,
+      lastFeedAt,
+    };
+  }
+
+  async summaryWeek(babyId?: string): Promise<WeekSummaryResponse> {
+    const endDate = new Date();
+    endDate.setHours(0, 0, 0, 0);
+    const startDate = new Date(endDate);
+    startDate.setDate(endDate.getDate() - 6);
+
+    const daily: WeekSummaryResponse['daily'] = [];
+    for (let i = 0; i < 7; i++) {
+      const dayStart = new Date(startDate);
+      dayStart.setDate(startDate.getDate() + i);
+      const dayStartTs = dayStart.getTime();
+      const dayEndTs = dayStartTs + 24 * 60 * 60 * 1000;
+      let events = getEvents().filter((e) => e.timestamp >= dayStartTs && e.timestamp < dayEndTs);
+      if (babyId) events = events.filter((e) => e.babyId === babyId);
+      daily.push({
+        date: this.formatDate(dayStartTs),
+        summaries: this.sumarizeEvents(events),
+      });
+    }
+    return {
+      startDate: this.formatDate(startDate.getTime()),
+      endDate: this.formatDate(endDate.getTime()),
+      daily,
+    };
+  }
+
+  private formatDate(ts: number): string {
+    const d = new Date(ts);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
   // ===== Growth Records =====
